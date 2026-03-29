@@ -45,11 +45,100 @@ launch_firefox() {
   info "Firefox launched: $url"
 }
 
+# ── Banner ────────────────────────────────────────────────────────────────────
+cat << 'BANNER'
+
+  _   _ _____ ____       _    ___ 
+ | | | |_   _/ ___|     / \  |_ _|
+ | |_| | | | \___ \    / _ \  | | 
+ |  _  | | |  ___) |  / ___ \ | | 
+ |_| |_| |_| |____/  /_/   \_\___|     ubuntu ai stack
+
+            00 — Bootstrap
+  ----------------------------------------
+BANNER
+
+# ── Pre-run checklist ─────────────────────────────────────────────────────────
+# Shows which steps are already complete. Safe to re-run — finished steps are
+# detected and skipped automatically throughout the script.
+echo -e "  ${GREEN}Setup checklist — already-done steps are marked [x]:${NC}\n"
+_git_name="$(git config --global user.name 2>/dev/null || true)"
+if   dpkg -s curl gpg openssh-server chrony &>/dev/null
+then echo -e "  ${GREEN}[x]${NC} 1. Prerequisites  (curl, gpg, ssh, chrony, gh)"
+else echo -e "  ${YELLOW}[ ]${NC} 1. Prerequisites  (curl, gpg, ssh, chrony, gh)"
+fi
+if   command -v git &>/dev/null
+then echo -e "  ${GREEN}[x]${NC} 2. Git"
+else echo -e "  ${YELLOW}[ ]${NC} 2. Git"
+fi
+if   command -v firefox &>/dev/null
+then echo -e "  ${GREEN}[x]${NC} 3. Firefox"
+else echo -e "  ${YELLOW}[ ]${NC} 3. Firefox               (will open GitHub login page)"
+fi
+if   command -v gh &>/dev/null && gh auth status &>/dev/null
+then echo -e "  ${GREEN}[x]${NC} 4. GitHub CLI auth"
+else echo -e "  ${YELLOW}[ ]${NC} 4. GitHub CLI auth        (browser sign-in required)"
+fi
+if   [[ -n "$_git_name" ]]
+then echo -e "  ${GREEN}[x]${NC} 5. Git identity           ($_git_name)"
+else echo -e "  ${YELLOW}[ ]${NC} 5. Git identity"
+fi
+     echo -e "  ${YELLOW}[ ]${NC} 6. Verify GitHub access   (always checked)"
+if   [[ -d "$CLONE_DIR/.git" ]]
+then echo -e "  ${GREEN}[x]${NC} 7. Clone repo             ($CLONE_DIR)"
+else echo -e "  ${YELLOW}[ ]${NC} 7. Clone repo             → $CLONE_DIR"
+fi
+if   nvidia-smi &>/dev/null
+then echo -e "  ${GREEN}[x]${NC} 8. NVIDIA drivers"
+else echo -e "  ${YELLOW}[ ]${NC} 8. NVIDIA drivers         (reboot required after install)"
+fi
+echo -e "\n ----------------------------------------\n"
+
+# ── Pre-flight: ensure curl exists before anything else ──────────────────────
+# On a bare Ubuntu install curl may not be present. Install it first so all
+# subsequent steps (apt key fetches, gh install, etc.) can use it freely.
+if ! command -v curl >/dev/null 2>&1; then
+  sudo apt-get update -qq
+  sudo apt-get install -y -qq curl
+fi
+
+# ── Pre-flight: fix conflicting Microsoft apt source Signed-By paths ─────────
+# VS Code / other Microsoft packages can register the same repo twice with
+# different keyring paths, causing `apt update` to abort with a conflict error.
+# Canonicalize to the modern /etc/apt/keyrings/ location and remove the stale
+# /usr/share/keyrings/ reference.
+for f in /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
+  [[ -f "$f" ]] || continue
+  if grep -q "packages.microsoft.com" "$f"; then
+    if grep -q "/usr/share/keyrings/microsoft" "$f"; then
+      sudo sed -i 's|/usr/share/keyrings/microsoft[^] ]*|/etc/apt/keyrings/packages.microsoft.gpg|g' "$f"
+      info "Fixed Microsoft apt Signed-By path in $f"
+    fi
+  fi
+done
+# If the legacy keyring file exists but the canonical one does not, copy it.
+if [[ -f /usr/share/keyrings/microsoft.gpg && ! -f /etc/apt/keyrings/packages.microsoft.gpg ]]; then
+  sudo mkdir -p /etc/apt/keyrings
+  sudo cp /usr/share/keyrings/microsoft.gpg /etc/apt/keyrings/packages.microsoft.gpg
+  info "Copied Microsoft GPG key to /etc/apt/keyrings/packages.microsoft.gpg"
+fi
+
+# ── Pre-flight: remove duplicate VS Code apt source ───────────────────────────
+# VS Code setup registers both vscode.list (legacy) and vscode.sources (DEB822).
+# Having both causes "configured multiple times" warnings. Keep only the modern
+# .sources file if both exist.
+if [[ -f /etc/apt/sources.list.d/vscode.list && -f /etc/apt/sources.list.d/vscode.sources ]]; then
+  sudo rm -f /etc/apt/sources.list.d/vscode.list
+  info "Removed duplicate /etc/apt/sources.list.d/vscode.list (vscode.sources retained)"
+fi
+
 # ── Step 1: Prerequisites ─────────────────────────────────────────────────────
 step "1 — Prerequisites"
 
 sudo apt-get update -qq
-sudo apt-get install -y -qq curl gpg ca-certificates apt-transport-https software-properties-common openssh-client chrony gh
+sudo apt-get install -y -qq curl gpg ca-certificates apt-transport-https software-properties-common openssh-client openssh-server chrony gh
+
+sudo systemctl enable --now ssh
 
 sudo timedatectl set-timezone "$BOOTSTRAP_TIMEZONE"
 info "Timezone set to $BOOTSTRAP_TIMEZONE"
@@ -75,6 +164,17 @@ sudo sed -i 's/^#\(server .*\)/\1/' /etc/chrony/chrony.conf
 sudo systemctl enable chrony
 sudo systemctl restart chrony
 
+# Set GNOME dark mode as the system default via dconf. Works without a running
+# session — applies to all users on next login. Users can still override it.
+sudo mkdir -p /etc/dconf/db/local.d
+sudo tee /etc/dconf/db/local.d/00-dark-mode > /dev/null << 'EOF'
+[org/gnome/desktop/interface]
+color-scheme='prefer-dark'
+gtk-theme='Yaru-dark'
+EOF
+sudo dconf update
+info "GNOME dark mode set as system default."
+
 info "Prerequisites ready."
 
 # ── Step 2: Git ───────────────────────────────────────────────────────────────
@@ -93,7 +193,11 @@ info "Git installed: $(git --version)"
 step "3 — Firefox"
 
 sudo apt-get install -y -qq firefox
-launch_firefox "https://github.com/login"
+if ! gh auth status >/dev/null 2>&1; then
+  launch_firefox "https://github.com/login"
+else
+  skip "Firefox login (GitHub already authenticated)"
+fi
 
 # ── Step 4: GitHub auth ───────────────────────────────────────────────────────
 step "4 — GitHub auth"
@@ -178,3 +282,4 @@ else
     warn "Remember to reboot before running 01-autoinstall.sh."
   fi
 fi
+

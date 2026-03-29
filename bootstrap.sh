@@ -25,8 +25,8 @@ skip() { echo -e "${YELLOW}[SKIP]${NC} $* — already done"; }
 fail() { echo -e "${RED}[FAIL]${NC} $*"; exit 1; }
 step() { echo -e "\n${GREEN}══ $* ══${NC}"; }
 
-CLONE_DIR="$HOME/github/ubuntu-ai-stack"
 BOOTSTRAP_TIMEZONE="${BOOTSTRAP_TIMEZONE:-America/New_York}"
+REPO_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/ubuntu-ai-stack"
 
 launch_firefox() {
   local url="$1"
@@ -93,6 +93,17 @@ then echo -e "  ${GREEN}[x]${NC} 8. NVIDIA drivers"
 else echo -e "  ${YELLOW}[ ]${NC} 8. NVIDIA drivers         (reboot required after install)"
 fi
 echo -e "\n ----------------------------------------\n"
+
+# ── Prompt for clone directory ────────────────────────────────────────────────
+DEFAULT_CLONE_DIR="$HOME/github/ubuntu-ai-stack"
+read -r -p "Where should we clone the repo? [$DEFAULT_CLONE_DIR] " CLONE_DIR_INPUT
+CLONE_DIR="${CLONE_DIR_INPUT:-$DEFAULT_CLONE_DIR}"
+
+# Save clone directory for install.sh to reference later
+mkdir -p "$REPO_CONFIG_DIR"
+echo "$CLONE_DIR" > "$REPO_CONFIG_DIR/clone-path"
+info "Repo will be cloned to: $CLONE_DIR"
+echo ""
 
 # ── Pre-flight: ensure curl exists before anything else ──────────────────────
 # On a bare Ubuntu install curl may not be present. Install it first so all
@@ -194,6 +205,7 @@ step "3 — Firefox"
 
 sudo apt-get install -y -qq firefox
 if ! gh auth status >/dev/null 2>&1; then
+  info "Firefox will open now. Sign in with your GitHub credentials so bootstrap can check out the htsai-net repo."
   launch_firefox "https://github.com/login"
 else
   skip "Firefox login (GitHub already authenticated)"
@@ -206,7 +218,7 @@ if gh auth status >/dev/null 2>&1; then
   skip "GitHub CLI already authenticated"
 else
   info "Starting GitHub CLI browser sign-in..."
-  info "Complete the GitHub login flow in your browser, then return here."
+  info "Complete the GitHub login flow in your browser using your GitHub credentials, then return here."
   gh auth login --hostname github.com --git-protocol https --web
 fi
 
@@ -272,17 +284,47 @@ else
   sudo update-initramfs -u
 
   echo ""
+  info "Setting up auto-start for install.sh on next boot..."
+  
+  # Create systemd service that runs install.sh after next reboot, then removes itself
+  mkdir -p "$HOME/.local/share/systemd/user"
+  cat > "$HOME/.local/share/systemd/user/ubuntu-ai-autoinstall.service" <<'UNIT'
+[Unit]
+Description=Ubuntu AI Stack Auto-Install (runs once after reboot)
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/bin/bash -c '. %h/.config/ubuntu-ai-stack/clone-path.sh && bash "$REPO_DIR/install.sh" && systemctl --user disable ubuntu-ai-autoinstall.service && systemctl --user stop ubuntu-ai-autoinstall.service'
+RemainAfterExit=no
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=default.target
+UNIT
+
+  # Create a shell script wrapper to source the path
+  cat > "$REPO_CONFIG_DIR/clone-path.sh" <<'WRAPPER'
+REPO_DIR=$(cat "$HOME/.config/ubuntu-ai-stack/clone-path" 2>/dev/null || echo "$HOME/github/ubuntu-ai-stack")
+export REPO_DIR
+WRAPPER
+  chmod +x "$REPO_CONFIG_DIR/clone-path.sh"
+
+  # Enable the service to start on next boot (but don't start it now)
+  systemctl --user daemon-reload
+  systemctl --user enable ubuntu-ai-autoinstall.service
+  
+  info "Auto-install service configured. install.sh will run automatically after reboot."
+  echo ""
   warn "NVIDIA drivers installed. A REBOOT is required."
-  warn "After reboot, run: cd ~/github/ubuntu-ai-stack && ./01-autoinstall.sh"
+  warn "After reboot, install.sh will run automatically."
   echo ""
   read -r -p "Reboot now? [y/N] " reply
   if [[ "$reply" =~ ^[Yy]$ ]]; then
-    sudo reboot
-  else
-    warn "Remember to reboot before running 01-autoinstall.sh."
+      sudo reboot
+    else
+      warn "Remember to reboot before running install.sh manually."
+    fi
   fi
-fi
-
-# Test marker
-# Test marker 2
-# Test marker 3

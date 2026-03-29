@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# install.sh — Run on a fresh Ubuntu 24.04 install, before the repo exists.
+# bootstrap.sh — Run on a fresh Ubuntu 24.04 install, before the repo exists.
 #
 # Usage:
 #   curl -fsSL https://raw.githubusercontent.com/htsainet/highlytechnicalshit.com/refs/heads/main/install.sh | bash

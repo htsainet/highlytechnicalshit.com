@@ -2,7 +2,7 @@
 # bootstrap.sh — Run on a fresh Ubuntu 24.04 install, before the repo exists.
 #
 # Usage:
-#   curl -fsSL https://raw.githubusercontent.com/htsainet/highlytechnicalshit.com/refs/heads/main/install.sh | bash
+#   curl -fsSL https://raw.githubusercontent.com/htsainet/highlytechnicalshit.com/refs/heads/main/bootstrap.sh | bash
 #
 # What it does:
 #   1. Updates apt, installs prerequisites (curl, gpg, chrony, gh), configures NTP and timezone, and pre-seeds docker group membership
@@ -285,3 +285,4 @@ fi
 
 # Test marker
 # Test marker 2
+# Test marker 3

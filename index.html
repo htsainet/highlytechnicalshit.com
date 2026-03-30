@@ -66,6 +66,8 @@
     }
     .verse-label.show { opacity: 1; }
     .verse-label.dim { color: #6e7681; font-style: italic; }
+    .verse-label a { color: inherit; text-decoration: none; display: block; margin-top: 0.3rem; font-size: 0.8em; }
+    .verse-label a:hover { text-decoration: underline; }
 
     /* ── Install boxes ── */
     .install-box {
@@ -133,8 +135,6 @@
     p.hint.show { opacity: 1; }
     p.hint a { color: #484f58; text-decoration: underline; }
     p.hint a:hover { color: #8b949e; }
-
-    /* ── Verdict box ── */
     .verdict-box {
       display: flex;
       flex-direction: column;
@@ -195,27 +195,6 @@
       94%  { left: 20%; transform: translateY(-50%) scaleX(1);  }
       100% { left: 20%; transform: translateY(-50%) scaleX(-1); }
     }
-
-    /* ── Fate outcome ── */
-    .fate-outcome {
-      text-align: center;
-      font-size: clamp(1.4rem, 4vw, 2rem);
-      color: #6e7681;
-      min-height: 2rem;
-      opacity: 0;
-      transform: translateY(6px);
-      transition: opacity 0.5s ease, transform 0.5s ease;
-      margin-top: 0.75rem;
-    }
-    .fate-outcome.show { opacity: 1; transform: translateY(0); }
-    .fate-outcome a {
-      color: #58a6ff;
-      text-decoration: none;
-      display: block;
-      margin-top: 0.4rem;
-      font-size: 0.88rem;
-    }
-    .fate-outcome a:hover { text-decoration: underline; }
 
     /* ── Footer ── */
     footer {
@@ -281,7 +260,6 @@
   </div>
 
   <!-- Fate outcome -->
-  <div class="fate-outcome" id="fateOutcome"></div>
 
   <script>
     var CURL_CMD = 'curl -sSL https://raw.githubusercontent.com/htsainet/highlytechnicalshit.com/main/install.sh | bash';
@@ -350,18 +328,16 @@
       document.getElementById('btnBlock').disabled = true;
       document.getElementById('btnAllow').disabled = true;
 
-      var outcome = document.getElementById('fateOutcome');
+      var label = document.getElementById('fishLabel');
 
       if (choice === 'block') {
-        outcome.innerHTML =
+        label.innerHTML =
           '🐟 with nemo there to wield it.' +
           '<a href="dist/highlytechnicalshit.com-v0.2.0.zip" download>⬇ download the stack</a>';
-        outcome.classList.add('show');
       } else {
-        outcome.innerHTML = '🤦 one does not simply ship it.';
-        outcome.classList.add('show');
+        label.textContent = '🤦 one does not simply ship it.';
         setTimeout(function() {
-          outcome.innerHTML = '<a href="https://www.uspsoperationsanta.com/" target="_blank" rel="noopener" style="color:#f85149">🤦 no download for you →</a>';
+          label.innerHTML = '<a href="https://www.uspsoperationsanta.com/" target="_blank" rel="noopener" style="color:#f85149">🤦 no download for you →</a>';
         }, 2400);
         setTimeout(function() {
           window.location.href = 'https://www.uspsoperationsanta.com/';

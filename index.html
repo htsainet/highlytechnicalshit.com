@@ -111,91 +111,87 @@
     p.hint a:hover { color: #8b949e; }
 
     /* ── Fish track ── */
-    .fish-track {
-      position: relative;
-      width: min(460px, 90vw);
-      height: 2.6rem;
+    .fish-section {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
       margin: 1rem 0 0.5rem;
       opacity: 0;
       transition: opacity 0.5s ease;
     }
-    .fish-track.show { opacity: 1; }
-    .fish-label {
+    .fish-section.show { opacity: 1; }
+
+    .fate-prompt {
+      color: #484f58;
+      font-size: 0.8rem;
+      letter-spacing: 0.08em;
+    }
+
+    .fish-track {
+      position: relative;
+      width: min(460px, 90vw);
+      height: 2.6rem;
+    }
+    .fish-btn {
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
       font-size: 0.75rem;
       font-weight: 700;
       letter-spacing: 0.06em;
-      user-select: none;
       white-space: nowrap;
+      background: none;
+      border: none;
+      cursor: pointer;
+      font-family: inherit;
+      padding: 0.25rem 0.4rem;
+      border-radius: 4px;
+      transition: background 0.15s;
     }
-    .fish-label.block { left: 0;   color: #f85149; }
-    .fish-label.allow { right: 0;  color: #3fb950; }
+    .fish-btn.block { left: 0;  color: #f85149; }
+    .fish-btn.allow { right: 0; color: #3fb950; }
+    .fish-btn:hover { background: rgba(255,255,255,0.05); }
+    .fish-btn:disabled { cursor: default; opacity: 0.5; }
+
     .fish-emoji {
       position: absolute;
       top: 50%;
       font-size: 1.5rem;
       line-height: 1;
-      /* fish emoji faces left by default; scaleX(-1) flips it right */
       animation: fish-swim 4.2s ease-in-out infinite;
+      transition: left 0.4s ease, transform 0.4s ease;
     }
+    .fish-emoji.frozen { animation: none; }
+
     @keyframes fish-swim {
-      0%   { left: 16%; transform: translateY(-50%) scaleX(-1); } /* at BLOCK, facing ALLOW */
-      42%  { left: 71%; transform: translateY(-50%) scaleX(-1); } /* arrive at ALLOW        */
-      52%  { left: 71%; transform: translateY(-50%) scaleX(1);  } /* flip, face BLOCK        */
-      94%  { left: 16%; transform: translateY(-50%) scaleX(1);  } /* arrive at BLOCK         */
-      100% { left: 16%; transform: translateY(-50%) scaleX(-1); } /* flip, face ALLOW        */
+      0%   { left: 16%; transform: translateY(-50%) scaleX(-1); }
+      42%  { left: 71%; transform: translateY(-50%) scaleX(-1); }
+      52%  { left: 71%; transform: translateY(-50%) scaleX(1);  }
+      94%  { left: 16%; transform: translateY(-50%) scaleX(1);  }
+      100% { left: 16%; transform: translateY(-50%) scaleX(-1); }
     }
 
-    /* ── Final links ── */
-    .final-links {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.5rem;
-      margin-top: 1.25rem;
+    /* ── Fate outcome ── */
+    .fate-outcome {
+      text-align: center;
+      font-size: 0.9rem;
+      color: #6e7681;
+      min-height: 2rem;
       opacity: 0;
       transform: translateY(6px);
       transition: opacity 0.5s ease, transform 0.5s ease;
+      margin-top: 0.75rem;
     }
-    .final-links.show { opacity: 1; transform: translateY(0); }
-
-    .choose-fate {
-      cursor: pointer;
-      color: #484f58;
-      font-size: 0.88rem;
-      letter-spacing: 0.08em;
-      text-transform: lowercase;
-      border: none;
-      background: none;
-      padding: 0;
-      font-family: inherit;
-      transition: color 0.2s;
-    }
-    .choose-fate:hover { color: #8b949e; }
-
-    .fate-options {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 0.5rem;
-      overflow: hidden;
-      max-height: 0;
-      opacity: 0;
-      transition: max-height 0.4s ease, opacity 0.4s ease;
-    }
-    .fate-options.open { max-height: 6rem; opacity: 1; }
-
-    .final-link {
-      color: #484f58;
+    .fate-outcome.show { opacity: 1; transform: translateY(0); }
+    .fate-outcome a {
+      color: #58a6ff;
       text-decoration: none;
-      font-size: 0.88rem;
-      letter-spacing: 0.01em;
-      transition: color 0.2s;
+      display: block;
+      margin-top: 0.4rem;
+      font-size: 0.85rem;
     }
-    .final-link:hover { color: #8b949e; }
-    .final-link em { font-style: normal; color: #6e7681; }
+    .fate-outcome a:hover { text-decoration: underline; }
 
     /* ── Footer ── */
     footer {
@@ -236,27 +232,18 @@
       target="_blank" rel="noopener">inspect the script</a> before running it.
   </p>
 
-  <!-- Fish track -->
-  <div class="fish-track" id="fishTrack">
-    <span class="fish-label block">🚫 BLOCK</span>
-    <span class="fish-emoji">🐟</span>
-    <span class="fish-label allow">✅ ALLOW</span>
-  </div>
-
-  <!-- Final two links -->
-  <div class="final-links" id="finalLinks">
-    <button class="choose-fate" onclick="toggleFate(this)" aria-expanded="false">
-      choose your fate ✨
-    </button>
-    <div class="fate-options" id="fateOptions">
-      <a class="final-link" href="dist/highlytechnicalshit.com-v0.2.0.zip" download>
-        <em>and nemo there to wield it.</em> 🐟 ↓
-      </a>
-      <a class="final-link" href="https://www.uspsoperationsanta.com/" target="_blank" rel="noopener">
-        one does not simply ship it. 📦
-      </a>
+  <!-- Fish track with fate choice -->
+  <div class="fish-section" id="fishSection">
+    <span class="fate-prompt">choose your fate ✨</span>
+    <div class="fish-track">
+      <button class="fish-btn block" id="btnBlock" onclick="chooseFate('block')">🚫 BLOCK</button>
+      <span class="fish-emoji" id="fishEmoji">🐟</span>
+      <button class="fish-btn allow" id="btnAllow" onclick="chooseFate('allow')">✅ ALLOW</button>
     </div>
   </div>
+
+  <!-- Fate outcome -->
+  <div class="fate-outcome" id="fateOutcome"></div>
 
   <footer>
     <a href="https://github.com/htsainet/highlytechnicalshit.com" target="_blank" rel="noopener">
@@ -306,22 +293,35 @@
       // --- Line 3: claws the law --- (dim style, emojis)
       await type(document.getElementById('line3'), '🦞 claws the law ⚖️ for every task 📋', 55);
       await sleep(400);
-      show('fishTrack');
+      show('fishSection');
       await sleep(800);
 
       // --- cursor parks itself back on h1 ---
       document.getElementById('cursor').remove();
-
-      // --- Final links fade in ---
-      await sleep(1200);
-      show('finalLinks');
     }
 
-    function toggleFate(btn) {
-      var opts = document.getElementById('fateOptions');
-      var open = opts.classList.toggle('open');
-      btn.setAttribute('aria-expanded', open);
-      btn.textContent = open ? 'choose your fate ✨' : 'choose your fate ✨';
+    function chooseFate(choice) {
+      // freeze fish
+      var fish = document.getElementById('fishEmoji');
+      fish.classList.add('frozen');
+      // disable both buttons
+      document.getElementById('btnBlock').disabled = true;
+      document.getElementById('btnAllow').disabled = true;
+
+      var outcome = document.getElementById('fateOutcome');
+
+      if (choice === 'block') {
+        outcome.innerHTML =
+          'and nemo there to wield it. 👍' +
+          '<a href="dist/highlytechnicalshit.com-v0.2.0.zip" download>⬇ download the stack</a>';
+        outcome.classList.add('show');
+      } else {
+        outcome.innerHTML = '🤦 no download for you';
+        outcome.classList.add('show');
+        setTimeout(function() {
+          window.location.href = 'https://www.ups.com/';
+        }, 1800);
+      }
     }
 
     function copyEl(srcId, btnId) {

@@ -71,7 +71,6 @@
 
     /* ── Fate link ── */
     .fate-link {
-      font-size: 0.9rem;
       text-align: center;
       min-height: 1.4rem;
       opacity: 0;
@@ -79,9 +78,21 @@
       transition: opacity 0.4s ease, transform 0.4s ease;
     }
     .fate-link.show { opacity: 1; transform: translateY(0); }
-    .fate-link a { color: #58a6ff; text-decoration: none; }
-    .fate-link a:hover { text-decoration: underline; }
-    .fate-link a.bad { color: #f85149; }
+    .fate-link a.dl-btn {
+      display: inline-block;
+      margin-top: 0.5rem;
+      padding: 0.75rem 2rem;
+      font-size: clamp(1rem, 2.5vw, 1.3rem);
+      font-weight: 700;
+      color: #0d1117;
+      background: #3fb950;
+      border-radius: 8px;
+      text-decoration: none;
+      transition: background 0.15s;
+    }
+    .fate-link a.dl-btn:hover { background: #56d364; }
+    .fate-link a.bad { color: #f85149; text-decoration: none; font-size: 0.95rem; }
+    .fate-link a.bad:hover { text-decoration: underline; }
 
     /* ── Install boxes ── */
     .install-box {
@@ -324,16 +335,22 @@
 
     function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
 
-    // type text into el char by char; moves cursor into el as last child first
+    // type text into el char by char; creates/reuses a cursor span
     async function type(el, text, speed) {
       speed = speed || 38;
       var chars = [...text];
       var cursor = document.getElementById('cursor');
+      if (!cursor) {
+        cursor = document.createElement('span');
+        cursor.className = 'cursor';
+        cursor.id = 'cursor';
+      }
       el.appendChild(cursor);
       for (var i = 0; i < chars.length; i++) {
         el.insertBefore(document.createTextNode(chars[i]), cursor);
         await sleep(speed + (Math.random() * 18 | 0));
       }
+      cursor.remove();
     }
 
     function show(id) { document.getElementById(id).classList.add('show'); }
@@ -377,8 +394,7 @@
       show('fishSection');
       await sleep(500);
 
-      // cursor done
-      document.getElementById('cursor').remove();
+      // cursor done — type() now removes it itself
     }
 
     function chooseFate(choice) {
@@ -399,7 +415,7 @@
         setTimeout(async function() {
           await type(document.getElementById('nemoCmd'), 'nemoclaw my-assistant connect', 45);
           await sleep(600);
-          link.innerHTML = '<a href="dist/highlytechnicalshit.com-v0.2.0.zip" download>⬇ download the stack</a>';
+          link.innerHTML = '<a class="dl-btn" href="dist/highlytechnicalshit.com-v0.2.0.zip" download>⬇ download the stack</a>';
           link.classList.add('show');
         }, 800);
       } else {

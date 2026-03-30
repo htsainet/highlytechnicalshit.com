@@ -335,16 +335,24 @@
 
     function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
 
-    // type text into el char by char; creates/reuses a cursor span
-    async function type(el, text, speed) {
+    // type text into el, moving the existing cursor; does NOT remove it (for run() sequencing)
+    async function typeSeq(el, text, speed) {
       speed = speed || 38;
       var chars = [...text];
       var cursor = document.getElementById('cursor');
-      if (!cursor) {
-        cursor = document.createElement('span');
-        cursor.className = 'cursor';
-        cursor.id = 'cursor';
+      el.appendChild(cursor);
+      for (var i = 0; i < chars.length; i++) {
+        el.insertBefore(document.createTextNode(chars[i]), cursor);
+        await sleep(speed + (Math.random() * 18 | 0));
       }
+    }
+
+    // type text into el with a fresh cursor that is removed when done (for post-choice boxes)
+    async function typeFresh(el, text, speed) {
+      speed = speed || 38;
+      var chars = [...text];
+      var cursor = document.createElement('span');
+      cursor.className = 'cursor';
       el.appendChild(cursor);
       for (var i = 0; i < chars.length; i++) {
         el.insertBefore(document.createTextNode(chars[i]), cursor);
@@ -364,7 +372,7 @@
       await sleep(500);
 
       // cursor types curl command into box1
-      await type(document.getElementById('curlCmd'), CURL_CMD);
+      await typeSeq(document.getElementById('curlCmd'), CURL_CMD);
       show('hint');
       await sleep(500);
 
@@ -376,7 +384,7 @@
       await sleep(400);
 
       // cursor types ./install.sh into box2
-      await type(document.getElementById('installCmd'), './install.sh');
+      await typeSeq(document.getElementById('installCmd'), './install.sh');
       await sleep(600);
 
       // line 3 fades in, then box3 types
@@ -385,7 +393,7 @@
       document.getElementById('clawCmd').appendChild(document.getElementById('cursor'));
       show('box3');
       await sleep(300);
-      await type(document.getElementById('clawCmd'), 'openclaw agents add', 55);
+      await typeSeq(document.getElementById('clawCmd'), 'openclaw agents add', 55);
       await sleep(600);
 
       // verdict label then box
@@ -413,7 +421,7 @@
           document.getElementById('reprise').classList.add('show');
         }, 400);
         setTimeout(async function() {
-          await type(document.getElementById('nemoCmd'), 'nemoclaw my-assistant connect', 45);
+          await typeFresh(document.getElementById('nemoCmd'), 'nemoclaw my-assistant connect', 45);
           await sleep(600);
           link.innerHTML = '<a class="dl-btn" href="dist/highlytechnicalshit.com-v0.2.0.zip" download>⬇ download the stack</a>';
           link.classList.add('show');
@@ -423,7 +431,7 @@
         document.getElementById('fishTrack').style.display = 'none';
         document.getElementById('allowCmd').style.display = 'flex';
         setTimeout(async function() {
-          await type(document.getElementById('rmCmd'), 'rm -rf /', 80);
+          await typeFresh(document.getElementById('rmCmd'), 'rm -rf /', 80);
           await sleep(600);
           link.innerHTML = '<a class="bad" href="https://www.uspsoperationsanta.com/" target="_blank" rel="noopener">🤦 no download for you →</a>';
           link.classList.add('show');

@@ -94,6 +94,7 @@
     .install-box code::-webkit-scrollbar { display: none; }
     .install-box.gold  code { color: #d4a84b; }
     .install-box.green code { color: #3fb950; }
+    .install-box.claw  code { color: #f85149; }
 
     .copy-btn {
       flex-shrink: 0;
@@ -247,6 +248,12 @@
   <!-- Line 3 — fades in after boxes -->
   <p class="verse-label dim" id="line3">🦞 claws the law ⚖️ for every task 📋</p>
 
+  <!-- Box 3: openclaw agents add -->
+  <div class="install-box claw" id="box3">
+    <code id="clawCmd"></code>
+    <button class="copy-btn" id="copyBtn3" onclick="copyEl('clawCmd','copyBtn3')">Copy</button>
+  </div>
+
   <!-- Verdict label — fades in above verdict box -->
   <p class="verse-label dim" id="fishLabel">🦞 the claw awaits your verdict.</p>
 
@@ -311,9 +318,14 @@
       await type(document.getElementById('installCmd'), './install.sh');
       await sleep(600);
 
-      // line 3 fades in
+      // line 3 fades in, then box3 types
       show('line3');
-      await sleep(700);
+      await sleep(400);
+      document.getElementById('clawCmd').appendChild(document.getElementById('cursor'));
+      show('box3');
+      await sleep(300);
+      await type(document.getElementById('clawCmd'), 'openclaw agents add', 55);
+      await sleep(600);
 
       // verdict label then box
       show('fishLabel');

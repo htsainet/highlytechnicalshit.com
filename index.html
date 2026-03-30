@@ -70,8 +70,9 @@
     /* ── Install boxes ── */
     .install-box {
       display: flex;
-      align-items: center;
-      gap: 0.75rem;
+      flex-direction: column;
+      align-items: stretch;
+      gap: 0.5rem;
       background: #161b22;
       border: 1px solid #30363d;
       border-radius: 10px;
@@ -102,6 +103,12 @@
     .install-box.green code { color: #3fb950; }
     .install-box.claw  code { color: #f85149; }
 
+    .box-row {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
     .copy-btn {
       flex-shrink: 0;
       background: #21262d;
@@ -118,10 +125,8 @@
     .copy-btn.copied { color: #3fb950; border-color: #3fb950; }
 
     p.hint {
-      margin-top: 0.75rem;
-      font-size: 0.78rem;
+      font-size: 0.72rem;
       color: #484f58;
-      text-align: center;
       opacity: 0;
       transition: opacity 0.4s ease;
     }
@@ -233,22 +238,23 @@
 
   <!-- Box 1: curl — visible from page load, cursor blinks in empty code -->
   <div class="install-box gold show" id="box1">
-    <code id="curlCmd"><span class="cursor" id="cursor"></span></code>
-    <button class="copy-btn" id="copyBtn1" onclick="copyEl('curlCmd','copyBtn1')">Copy</button>
+    <div class="box-row">
+      <code id="curlCmd"><span class="cursor" id="cursor"></span></code>
+      <button class="copy-btn" id="copyBtn1" onclick="copyEl('curlCmd','copyBtn1')">Copy</button>
+    </div>
+    <p class="hint" id="hint">Always <a href="https://raw.githubusercontent.com/htsainet/highlytechnicalshit.com/main/install.sh"
+        target="_blank" rel="noopener">inspect the script</a> before running it.</p>
   </div>
-
-  <p class="hint" id="hint">
-    Always <a href="https://raw.githubusercontent.com/htsainet/highlytechnicalshit.com/main/install.sh"
-      target="_blank" rel="noopener">inspect the script</a> before running it.
-  </p>
 
   <!-- Line 2 label — fades in above install box -->
   <p class="verse-label" id="label2">one command to build it.</p>
 
   <!-- Box 2: ./install.sh — hidden initially, cursor moves here before reveal -->
   <div class="install-box green" id="box2">
-    <code id="installCmd"></code>
-    <button class="copy-btn" id="copyBtn2" onclick="copyEl('installCmd','copyBtn2')">Copy</button>
+    <div class="box-row">
+      <code id="installCmd"></code>
+      <button class="copy-btn" id="copyBtn2" onclick="copyEl('installCmd','copyBtn2')">Copy</button>
+    </div>
   </div>
 
   <!-- Line 3 — fades in after boxes -->
@@ -256,8 +262,10 @@
 
   <!-- Box 3: openclaw agents add -->
   <div class="install-box claw" id="box3">
-    <code id="clawCmd"></code>
-    <button class="copy-btn" id="copyBtn3" onclick="copyEl('clawCmd','copyBtn3')">Copy</button>
+    <div class="box-row">
+      <code id="clawCmd"></code>
+      <button class="copy-btn" id="copyBtn3" onclick="copyEl('clawCmd','copyBtn3')">Copy</button>
+    </div>
   </div>
 
   <!-- Verdict label — fades in above verdict box -->

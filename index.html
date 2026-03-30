@@ -124,6 +124,19 @@
       align-items: center;
       gap: 0.75rem;
     }
+    .verdict-cmd {
+      width: 100%;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: clamp(0.7rem, 1.8vw, 0.88rem);
+    }
+    .verdict-cmd code {
+      flex: 1;
+      white-space: nowrap;
+      overflow-x: auto;
+      scrollbar-width: thin;
+      scrollbar-color: #30363d transparent;
+      min-height: 1.2em;
+    }
 
     .copy-btn {
       flex-shrink: 0;
@@ -283,10 +296,17 @@
 
   <!-- Verdict box -->
   <div class="verdict-box" id="fishSection">
-    <div class="fish-track">
+    <div class="fish-track" id="fishTrack">
       <button class="fish-btn block" id="btnBlock" onclick="chooseFate('block')">🚫 default deny</button>
       <span class="fish-emoji" id="fishEmoji">🐟</span>
       <button class="fish-btn allow" id="btnAllow" onclick="chooseFate('allow')">✅ default allow</button>
+    </div>
+    <div class="box-row verdict-cmd" id="denyCmd" style="display:none">
+      <code id="nemoCmd" style="color:#58a6ff"></code>
+      <button class="copy-btn" id="copyBtn4" onclick="copyEl('nemoCmd','copyBtn4')">Copy</button>
+    </div>
+    <div class="box-row verdict-cmd" id="allowCmd" style="display:none">
+      <code id="rmCmd" style="color:#f85149"></code>
     </div>
   </div>
 
@@ -294,21 +314,6 @@
   <div class="reprise" id="reprise">
     <p class="intro-line">Be prepared to see some</p>
     <h2>Highly <span>Technical</span> Shit</h2>
-  </div>
-
-  <!-- Box 4: nemoclaw my-assistant connect (deny path) -->
-  <div class="install-box claw" id="box4">
-    <div class="box-row">
-      <code id="nemoCmd"></code>
-      <button class="copy-btn" id="copyBtn4" onclick="copyEl('nemoCmd','copyBtn4')">Copy</button>
-    </div>
-  </div>
-
-  <!-- Box allow: rm -rf / (allow path) -->
-  <div class="install-box" id="boxAllow" style="border-color:#f85149">
-    <div class="box-row">
-      <code id="rmCmd" style="color:#f85149"></code>
-    </div>
   </div>
 
   <!-- Fate link (download / redirect) -->
@@ -386,30 +391,27 @@
 
       if (choice === 'block') {
         label.textContent = '🐟 with nemo there to shield it.';
+        document.getElementById('fishTrack').style.display = 'none';
+        document.getElementById('denyCmd').style.display = 'flex';
         setTimeout(function() {
           document.getElementById('reprise').classList.add('show');
         }, 400);
         setTimeout(async function() {
-          var box4 = document.getElementById('box4');
-          var nemoCmd = document.getElementById('nemoCmd');
-          box4.classList.add('show');
-          await sleep(300);
-          await type(nemoCmd, 'nemoclaw my-assistant connect', 45);
+          await type(document.getElementById('nemoCmd'), 'nemoclaw my-assistant connect', 45);
           await sleep(600);
           link.innerHTML = '<a href="dist/highlytechnicalshit.com-v0.2.0.zip" download>⬇ download the stack</a>';
           link.classList.add('show');
-        }, 1200);
+        }, 800);
       } else {
         label.textContent = '🤦 one does not simply ship it.';
+        document.getElementById('fishTrack').style.display = 'none';
+        document.getElementById('allowCmd').style.display = 'flex';
         setTimeout(async function() {
-          var boxAllow = document.getElementById('boxAllow');
-          boxAllow.classList.add('show');
-          await sleep(300);
           await type(document.getElementById('rmCmd'), 'rm -rf /', 80);
           await sleep(600);
           link.innerHTML = '<a class="bad" href="https://www.uspsoperationsanta.com/" target="_blank" rel="noopener">🤦 no download for you →</a>';
           link.classList.add('show');
-        }, 600);
+        }, 400);
         setTimeout(function() {
           window.location.href = 'https://www.uspsoperationsanta.com/';
         }, 4200);

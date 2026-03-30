@@ -296,6 +296,21 @@
     <h2>Highly <span>Technical</span> Shit</h2>
   </div>
 
+  <!-- Box 4: nemoclaw my-assistant connect (deny path) -->
+  <div class="install-box claw" id="box4">
+    <div class="box-row">
+      <code id="nemoCmd"></code>
+      <button class="copy-btn" id="copyBtn4" onclick="copyEl('nemoCmd','copyBtn4')">Copy</button>
+    </div>
+  </div>
+
+  <!-- Box allow: rm -rf / (allow path) -->
+  <div class="install-box" id="boxAllow" style="border-color:#f85149">
+    <div class="box-row">
+      <code id="rmCmd" style="color:#f85149"></code>
+    </div>
+  </div>
+
   <!-- Fate link (download / redirect) -->
   <div class="fate-link" id="fateLink"></div>
 
@@ -374,15 +389,27 @@
         setTimeout(function() {
           document.getElementById('reprise').classList.add('show');
         }, 400);
-        setTimeout(function() {
+        setTimeout(async function() {
+          var box4 = document.getElementById('box4');
+          var nemoCmd = document.getElementById('nemoCmd');
+          box4.classList.add('show');
+          await sleep(300);
+          await type(nemoCmd, 'nemoclaw my-assistant connect', 45);
+          await sleep(600);
           link.innerHTML = '<a href="dist/highlytechnicalshit.com-v0.2.0.zip" download>⬇ download the stack</a>';
           link.classList.add('show');
         }, 1200);
-      } else {        label.textContent = '🤦 one does not simply ship it.';
-        setTimeout(function() {
+      } else {
+        label.textContent = '🤦 one does not simply ship it.';
+        setTimeout(async function() {
+          var boxAllow = document.getElementById('boxAllow');
+          boxAllow.classList.add('show');
+          await sleep(300);
+          await type(document.getElementById('rmCmd'), 'rm -rf /', 80);
+          await sleep(600);
           link.innerHTML = '<a class="bad" href="https://www.uspsoperationsanta.com/" target="_blank" rel="noopener">🤦 no download for you →</a>';
           link.classList.add('show');
-        }, 2400);
+        }, 600);
         setTimeout(function() {
           window.location.href = 'https://www.uspsoperationsanta.com/';
         }, 4200);

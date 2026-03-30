@@ -52,16 +52,17 @@
 
     /* ── LOTR verse labels ── */
     .verse-label {
-      font-size: clamp(0.95rem, 2.2vw, 1.1rem);
+      font-size: clamp(1.4rem, 4vw, 2rem);
       color: #8b949e;
       text-align: center;
-      letter-spacing: 0.01em;
-      max-width: 680px;
+      letter-spacing: -0.01em;
+      max-width: 860px;
       width: 100%;
       opacity: 0;
       transition: opacity 0.5s ease;
-      margin-top: 1.25rem;
-      margin-bottom: 0.4rem;
+      margin-top: 1.6rem;
+      margin-bottom: 0.5rem;
+      line-height: 1.3;
     }
     .verse-label.show { opacity: 1; }
     .verse-label.dim { color: #6e7681; font-style: italic; }
@@ -75,23 +76,28 @@
       border: 1px solid #30363d;
       border-radius: 10px;
       padding: 1rem 1.25rem;
-      max-width: 680px;
+      max-width: 860px;
       width: 100%;
       opacity: 0;
       transform: translateY(6px);
       transition: opacity 0.4s ease, transform 0.4s ease;
+      overflow: hidden;
     }
     .install-box.show { opacity: 1; transform: translateY(0); }
     .install-box code {
       flex: 1;
       font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
-      font-size: clamp(0.72rem, 2.5vw, 0.88rem);
+      font-size: clamp(0.7rem, 1.8vw, 0.88rem);
       white-space: nowrap;
       overflow-x: auto;
-      scrollbar-width: none;
+      scrollbar-width: thin;
+      scrollbar-color: #30363d transparent;
       min-height: 1.2em;
+      padding-bottom: 2px;
     }
-    .install-box code::-webkit-scrollbar { display: none; }
+    .install-box code::-webkit-scrollbar { height: 4px; }
+    .install-box code::-webkit-scrollbar-track { background: transparent; }
+    .install-box code::-webkit-scrollbar-thumb { background: #30363d; border-radius: 2px; }
     .install-box.gold  code { color: #d4a84b; }
     .install-box.green code { color: #3fb950; }
     .install-box.claw  code { color: #f85149; }

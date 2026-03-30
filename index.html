@@ -290,14 +290,14 @@
     </div>
   </div>
 
-  <!-- Fate link (download / redirect) -->
-  <div class="fate-link" id="fateLink"></div>
-
   <!-- Reprise — shown only on default deny -->
   <div class="reprise" id="reprise">
     <p class="intro-line">Be prepared to see some</p>
     <h2>Highly <span>Technical</span> Shit</h2>
   </div>
+
+  <!-- Fate link (download / redirect) -->
+  <div class="fate-link" id="fateLink"></div>
 
   <script>
     var CURL_CMD = 'curl -sSL https://raw.githubusercontent.com/htsainet/highlytechnicalshit.com/main/install.sh | bash';
@@ -371,11 +371,13 @@
 
       if (choice === 'block') {
         label.textContent = '🐟 with nemo there to shield it.';
-        link.innerHTML = '<a href="dist/highlytechnicalshit.com-v0.2.0.zip" download>⬇ download the stack</a>';
-        link.classList.add('show');
         setTimeout(function() {
           document.getElementById('reprise').classList.add('show');
-        }, 800);
+        }, 400);
+        setTimeout(function() {
+          link.innerHTML = '<a href="dist/highlytechnicalshit.com-v0.2.0.zip" download>⬇ download the stack</a>';
+          link.classList.add('show');
+        }, 1200);
       } else {        label.textContent = '🤦 one does not simply ship it.';
         setTimeout(function() {
           link.innerHTML = '<a class="bad" href="https://www.uspsoperationsanta.com/" target="_blank" rel="noopener">🤦 no download for you →</a>';

@@ -69,6 +69,20 @@
     .verse-label a { color: inherit; text-decoration: none; display: block; margin-top: 0.3rem; font-size: 0.8em; }
     .verse-label a:hover { text-decoration: underline; }
 
+    /* ── Fate link ── */
+    .fate-link {
+      font-size: 0.9rem;
+      text-align: center;
+      min-height: 1.4rem;
+      opacity: 0;
+      transform: translateY(4px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .fate-link.show { opacity: 1; transform: translateY(0); }
+    .fate-link a { color: #58a6ff; text-decoration: none; }
+    .fate-link a:hover { text-decoration: underline; }
+    .fate-link a.bad { color: #f85149; }
+
     /* ── Install boxes ── */
     .install-box {
       display: flex;
@@ -259,6 +273,9 @@
     </div>
   </div>
 
+  <!-- Fate link (download / redirect) -->
+  <div class="fate-link" id="fateLink"></div>
+
   <!-- Fate outcome -->
 
   <script>
@@ -329,15 +346,17 @@
       document.getElementById('btnAllow').disabled = true;
 
       var label = document.getElementById('fishLabel');
+      var link  = document.getElementById('fateLink');
 
       if (choice === 'block') {
-        label.innerHTML =
-          '🐟 with nemo there to wield it.' +
-          '<a href="dist/highlytechnicalshit.com-v0.2.0.zip" download>⬇ download the stack</a>';
+        label.textContent = '🐟 with nemo there to wield it.';
+        link.innerHTML = '<a href="dist/highlytechnicalshit.com-v0.2.0.zip" download>⬇ download the stack</a>';
+        link.classList.add('show');
       } else {
         label.textContent = '🤦 one does not simply ship it.';
         setTimeout(function() {
-          label.innerHTML = '<a href="https://www.uspsoperationsanta.com/" target="_blank" rel="noopener" style="color:#f85149">🤦 no download for you →</a>';
+          link.innerHTML = '<a class="bad" href="https://www.uspsoperationsanta.com/" target="_blank" rel="noopener">🤦 no download for you →</a>';
+          link.classList.add('show');
         }, 2400);
         setTimeout(function() {
           window.location.href = 'https://www.uspsoperationsanta.com/';

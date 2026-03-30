@@ -160,6 +160,33 @@
       transition: opacity 0.5s ease, transform 0.5s ease;
     }
     .final-links.show { opacity: 1; transform: translateY(0); }
+
+    .choose-fate {
+      cursor: pointer;
+      color: #484f58;
+      font-size: 0.88rem;
+      letter-spacing: 0.08em;
+      text-transform: lowercase;
+      border: none;
+      background: none;
+      padding: 0;
+      font-family: inherit;
+      transition: color 0.2s;
+    }
+    .choose-fate:hover { color: #8b949e; }
+
+    .fate-options {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.5rem;
+      overflow: hidden;
+      max-height: 0;
+      opacity: 0;
+      transition: max-height 0.4s ease, opacity 0.4s ease;
+    }
+    .fate-options.open { max-height: 6rem; opacity: 1; }
+
     .final-link {
       color: #484f58;
       text-decoration: none;
@@ -218,12 +245,17 @@
 
   <!-- Final two links -->
   <div class="final-links" id="finalLinks">
-    <a class="final-link" href="dist/highlytechnicalshit.com-v0.2.0.zip" download>
-      <em>and nemo there to wield it.</em> 🐟 ↓
-    </a>
-    <a class="final-link" href="https://www.uspsoperationsanta.com/" target="_blank" rel="noopener">
-      one does not simply ship it. 📦
-    </a>
+    <button class="choose-fate" onclick="toggleFate(this)" aria-expanded="false">
+      choose your fate ✨
+    </button>
+    <div class="fate-options" id="fateOptions">
+      <a class="final-link" href="dist/highlytechnicalshit.com-v0.2.0.zip" download>
+        <em>and nemo there to wield it.</em> 🐟 ↓
+      </a>
+      <a class="final-link" href="https://www.uspsoperationsanta.com/" target="_blank" rel="noopener">
+        one does not simply ship it. 📦
+      </a>
+    </div>
   </div>
 
   <footer>
@@ -283,6 +315,13 @@
       // --- Final links fade in ---
       await sleep(1200);
       show('finalLinks');
+    }
+
+    function toggleFate(btn) {
+      var opts = document.getElementById('fateOptions');
+      var open = opts.classList.toggle('open');
+      btn.setAttribute('aria-expanded', open);
+      btn.textContent = open ? 'choose your fate ✨' : 'choose your fate ✨';
     }
 
     function copyEl(srcId, btnId) {

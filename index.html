@@ -210,6 +210,26 @@
       100% { left: 20%; transform: translateY(-50%) scaleX(-1); }
     }
 
+    /* ── Reprise ── */
+    .reprise {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.4rem;
+      margin-top: 2rem;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.6s ease, transform 0.6s ease;
+    }
+    .reprise.show { opacity: 1; transform: translateY(0); }
+    .reprise h2 {
+      font-size: clamp(1.5rem, 5vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      text-align: center;
+    }
+    .reprise h2 span { color: #58a6ff; }
+
     /* ── Footer ── */
     footer {
       position: fixed;
@@ -276,7 +296,11 @@
   <!-- Fate link (download / redirect) -->
   <div class="fate-link" id="fateLink"></div>
 
-  <!-- Fate outcome -->
+  <!-- Reprise — shown only on default deny -->
+  <div class="reprise" id="reprise">
+    <p class="intro-line">Be prepared to see some</p>
+    <h2>Highly <span>Technical</span> Shit</h2>
+  </div>
 
   <script>
     var CURL_CMD = 'curl -sSL https://raw.githubusercontent.com/htsainet/highlytechnicalshit.com/main/install.sh | bash';
@@ -352,8 +376,10 @@
         label.textContent = '🐟 with nemo there to shield it.';
         link.innerHTML = '<a href="dist/highlytechnicalshit.com-v0.2.0.zip" download>⬇ download the stack</a>';
         link.classList.add('show');
-      } else {
-        label.textContent = '🤦 one does not simply ship it.';
+        setTimeout(function() {
+          document.getElementById('reprise').classList.add('show');
+        }, 800);
+      } else {        label.textContent = '🤦 one does not simply ship it.';
         setTimeout(function() {
           link.innerHTML = '<a class="bad" href="https://www.uspsoperationsanta.com/" target="_blank" rel="noopener">🤦 no download for you →</a>';
           link.classList.add('show');

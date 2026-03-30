@@ -42,6 +42,20 @@
       text-align: center;
     }
 
+    .verse {
+      margin-bottom: 2.5rem;
+      text-align: center;
+      color: #484f58;
+      font-size: 0.88rem;
+      line-height: 2;
+      letter-spacing: 0.01em;
+    }
+
+    .verse em {
+      font-style: normal;
+      color: #6e7681;
+    }
+
     .install-box {
       display: flex;
       align-items: center;
@@ -127,6 +141,14 @@
 <body>
   <h1>highly<span>technical</span>shit</h1>
   <p class="tagline">one command to get it all</p>
+
+  <div class="verse">
+    one command to get it all,<br>
+    one command to build it,<br>
+    <em>claws the law for every task,</em><br>
+    <em>and nemo there to wield it,</em><br>
+    one does not simply ship it.
+  </div>
 
   <div class="install-box">
     <code id="cmd">curl -sSL https://raw.githubusercontent.com/htsainet/highlytechnicalshit.com/main/install.sh | bash</code>

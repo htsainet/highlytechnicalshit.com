@@ -110,6 +110,21 @@
     p.hint a { color: #484f58; text-decoration: underline; }
     p.hint a:hover { color: #8b949e; }
 
+    /* ── Box labels ── */
+    .box-label {
+      font-size: 0.78rem;
+      color: #484f58;
+      letter-spacing: 0.05em;
+      margin-top: 1rem;
+      margin-bottom: 0.1rem;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+      align-self: flex-start;
+      max-width: 680px;
+      width: 100%;
+    }
+    .box-label.show { opacity: 1; }
+
     /* ── Fish track ── */
     .fish-section {
       display: flex;
@@ -216,12 +231,14 @@
   </div>
 
   <!-- Box 1: curl command (gold, hidden initially) -->
+  <p class="box-label" id="label1">📦 Get It All →</p>
   <div class="install-box gold" id="box1">
     <code id="curlCmd">curl -sSL https://raw.githubusercontent.com/htsainet/highlytechnicalshit.com/main/install.sh | bash</code>
     <button class="copy-btn" id="copyBtn1" onclick="copyEl('curlCmd','copyBtn1')">Copy</button>
   </div>
 
   <!-- Box 2: ./install.sh (green, hidden initially) -->
+  <p class="box-label" id="label2">🔨 Build It →</p>
   <div class="install-box green" id="box2">
     <code id="installCmd">./install.sh</code>
     <button class="copy-btn" id="copyBtn2" onclick="copyEl('installCmd','copyBtn2')">Copy</button>
@@ -234,7 +251,7 @@
 
   <!-- Fish track with fate choice -->
   <div class="fish-section" id="fishSection">
-    <span class="fate-prompt">choose your fate ✨</span>
+    <span class="fate-prompt">🦞 the claw awaits your verdict.</span>
     <div class="fish-track">
       <button class="fish-btn block" id="btnBlock" onclick="chooseFate('block')">🚫 BLOCK</button>
       <span class="fish-emoji" id="fishEmoji">🐟</span>
@@ -280,6 +297,7 @@
       // --- Line 1: "one command to get it all," ---
       await type(document.getElementById('line1'), 'one command to get it all,');
       await sleep(350);
+      show('label1');
       show('box1');
       show('hint');
       await sleep(600);
@@ -287,6 +305,7 @@
       // --- Line 2: "one command to build it." ---
       await type(document.getElementById('line2'), 'one command to build it.');
       await sleep(350);
+      show('label2');
       show('box2');
       await sleep(600);
 
@@ -316,11 +335,14 @@
           '<a href="dist/highlytechnicalshit.com-v0.2.0.zip" download>⬇ download the stack</a>';
         outcome.classList.add('show');
       } else {
-        outcome.innerHTML = '🤦 no download for you';
+        outcome.innerHTML = 'one does not simply ship it.';
         outcome.classList.add('show');
         setTimeout(function() {
+          outcome.innerHTML = '<a href="https://www.ups.com/" target="_blank" rel="noopener" style="color:#f85149">🤦 no download for you →</a>';
+        }, 2400);
+        setTimeout(function() {
           window.location.href = 'https://www.ups.com/';
-        }, 1800);
+        }, 4200);
       }
     }
 

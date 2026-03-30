@@ -21,6 +21,373 @@
     }
 
     /* ── Title ── */
+    .intro-line {
+      font-size: clamp(0.8rem, 2vw, 1rem);
+      color: #484f58;
+      text-align: center;
+      letter-spacing: 0.04em;
+      margin-bottom: 0.4rem;
+    }
+
+    h1 {
+      font-size: clamp(1.5rem, 5vw, 2.5rem);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 2rem;
+      text-align: center;
+    }
+    h1 span { color: #58a6ff; }
+
+    /* ── Blinking cursor ── */
+    .cursor {
+      display: inline-block;
+      width: 2px;
+      height: 0.9em;
+      background: #58a6ff;
+      vertical-align: middle;
+      margin-left: 2px;
+      animation: blink 1s step-end infinite;
+    }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+    /* ── LOTR verse labels ── */
+    .verse-label {
+      font-size: clamp(0.95rem, 2.2vw, 1.1rem);
+      color: #8b949e;
+      text-align: center;
+      letter-spacing: 0.01em;
+      max-width: 680px;
+      width: 100%;
+      opacity: 0;
+      transition: opacity 0.5s ease;
+      margin-top: 1.25rem;
+      margin-bottom: 0.4rem;
+    }
+    .verse-label.show { opacity: 1; }
+    .verse-label.dim { color: #6e7681; font-style: italic; }
+
+    /* ── Install boxes ── */
+    .install-box {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 1rem 1.25rem;
+      max-width: 680px;
+      width: 100%;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.4s ease, transform 0.4s ease;
+    }
+    .install-box.show { opacity: 1; transform: translateY(0); }
+    .install-box code {
+      flex: 1;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+      font-size: clamp(0.72rem, 2.5vw, 0.88rem);
+      white-space: nowrap;
+      overflow-x: auto;
+      scrollbar-width: none;
+      min-height: 1.2em;
+    }
+    .install-box code::-webkit-scrollbar { display: none; }
+    .install-box.gold  code { color: #d4a84b; }
+    .install-box.green code { color: #3fb950; }
+
+    .copy-btn {
+      flex-shrink: 0;
+      background: #21262d;
+      border: 1px solid #30363d;
+      border-radius: 6px;
+      color: #c9d1d9;
+      cursor: pointer;
+      font-size: 0.8rem;
+      padding: 0.35rem 0.75rem;
+      transition: background 0.15s, color 0.15s;
+      white-space: nowrap;
+    }
+    .copy-btn:hover { background: #30363d; color: #e6edf3; }
+    .copy-btn.copied { color: #3fb950; border-color: #3fb950; }
+
+    p.hint {
+      margin-top: 0.75rem;
+      font-size: 0.78rem;
+      color: #484f58;
+      text-align: center;
+      opacity: 0;
+      transition: opacity 0.4s ease;
+    }
+    p.hint.show { opacity: 1; }
+    p.hint a { color: #484f58; text-decoration: underline; }
+    p.hint a:hover { color: #8b949e; }
+
+    /* ── Verdict box ── */
+    .verdict-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.6rem;
+      background: #161b22;
+      border: 1px solid #30363d;
+      border-radius: 10px;
+      padding: 1rem 1.5rem;
+      max-width: 680px;
+      width: 100%;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+    }
+    .verdict-box.show { opacity: 1; transform: translateY(0); }
+
+    /* ── Fish track ── */
+    .fish-track {
+      position: relative;
+      width: min(420px, 100%);
+      height: 2.8rem;
+    }
+    .fish-btn {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: 0.8rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+      background: none;
+      border: 1px solid transparent;
+      border-radius: 6px;
+      cursor: pointer;
+      font-family: inherit;
+      padding: 0.3rem 0.6rem;
+      transition: background 0.15s, border-color 0.15s;
+    }
+    .fish-btn.block { left: 0;  color: #f85149; }
+    .fish-btn.allow { right: 0; color: #3fb950; }
+    .fish-btn:hover { background: rgba(255,255,255,0.05); border-color: currentColor; }
+    .fish-btn:disabled { cursor: default; opacity: 0.4; }
+
+    .fish-emoji {
+      position: absolute;
+      top: 50%;
+      font-size: 1.5rem;
+      line-height: 1;
+      animation: fish-swim 4.2s ease-in-out infinite;
+    }
+    .fish-emoji.frozen { animation: none; }
+
+    @keyframes fish-swim {
+      0%   { left: 20%; transform: translateY(-50%) scaleX(-1); }
+      42%  { left: 66%; transform: translateY(-50%) scaleX(-1); }
+      52%  { left: 66%; transform: translateY(-50%) scaleX(1);  }
+      94%  { left: 20%; transform: translateY(-50%) scaleX(1);  }
+      100% { left: 20%; transform: translateY(-50%) scaleX(-1); }
+    }
+
+    /* ── Fate outcome ── */
+    .fate-outcome {
+      text-align: center;
+      font-size: 0.95rem;
+      color: #6e7681;
+      min-height: 2rem;
+      opacity: 0;
+      transform: translateY(6px);
+      transition: opacity 0.5s ease, transform 0.5s ease;
+      margin-top: 0.75rem;
+    }
+    .fate-outcome.show { opacity: 1; transform: translateY(0); }
+    .fate-outcome a {
+      color: #58a6ff;
+      text-decoration: none;
+      display: block;
+      margin-top: 0.4rem;
+      font-size: 0.88rem;
+    }
+    .fate-outcome a:hover { text-decoration: underline; }
+
+    /* ── Footer ── */
+    footer {
+      position: fixed;
+      bottom: 1.25rem;
+      color: #484f58;
+      font-size: 0.8rem;
+    }
+    footer a { color: #484f58; text-decoration: none; }
+    footer a:hover { color: #8b949e; }
+  </style>
+</head>
+<body>
+
+  <p class="intro-line">Be prepared to see some</p>
+  <h1>Highly <span>Technical</span> Shit</h1>
+
+  <!-- Line 1 label — fades in above curl box -->
+  <p class="verse-label" id="label1">one command to get it all,</p>
+
+  <!-- Box 1: curl — visible from page load, cursor blinks in empty code -->
+  <div class="install-box gold show" id="box1">
+    <code id="curlCmd"><span class="cursor" id="cursor"></span></code>
+    <button class="copy-btn" id="copyBtn1" onclick="copyEl('curlCmd','copyBtn1')">Copy</button>
+  </div>
+
+  <p class="hint" id="hint">
+    Always <a href="https://raw.githubusercontent.com/htsainet/highlytechnicalshit.com/main/install.sh"
+      target="_blank" rel="noopener">inspect the script</a> before running it.
+  </p>
+
+  <!-- Line 2 label — fades in above install box -->
+  <p class="verse-label" id="label2">one command to build it.</p>
+
+  <!-- Box 2: ./install.sh — hidden initially, cursor moves here before reveal -->
+  <div class="install-box green" id="box2">
+    <code id="installCmd"></code>
+    <button class="copy-btn" id="copyBtn2" onclick="copyEl('installCmd','copyBtn2')">Copy</button>
+  </div>
+
+  <!-- Line 3 — fades in after boxes -->
+  <p class="verse-label dim" id="line3">🦞 claws the law ⚖️ for every task 📋</p>
+
+  <!-- Verdict label — fades in above verdict box -->
+  <p class="verse-label dim" id="fishLabel">🦞 the claw awaits your verdict.</p>
+
+  <!-- Verdict box -->
+  <div class="verdict-box" id="fishSection">
+    <div class="fish-track">
+      <button class="fish-btn block" id="btnBlock" onclick="chooseFate('block')">🚫 default deny</button>
+      <span class="fish-emoji" id="fishEmoji">🐟</span>
+      <button class="fish-btn allow" id="btnAllow" onclick="chooseFate('allow')">✅ default allow</button>
+    </div>
+  </div>
+
+  <!-- Fate outcome -->
+  <div class="fate-outcome" id="fateOutcome"></div>
+
+  <footer>
+    <a href="https://github.com/htsainet/highlytechnicalshit.com" target="_blank" rel="noopener">
+      source on GitHub
+    </a>
+  </footer>
+
+  <script>
+    var CURL_CMD = 'curl -sSL https://raw.githubusercontent.com/htsainet/highlytechnicalshit.com/main/install.sh | bash';
+
+    function sleep(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+
+    // type text into el char by char; moves cursor into el as last child first
+    async function type(el, text, speed) {
+      speed = speed || 38;
+      var chars = [...text];
+      var cursor = document.getElementById('cursor');
+      el.appendChild(cursor);
+      for (var i = 0; i < chars.length; i++) {
+        el.insertBefore(document.createTextNode(chars[i]), cursor);
+        await sleep(speed + (Math.random() * 18 | 0));
+      }
+    }
+
+    function show(id) { document.getElementById(id).classList.add('show'); }
+
+    async function run() {
+      // cursor blinks in empty box1 — brief pause
+      await sleep(1500);
+
+      // line 1 label fades in above box1
+      show('label1');
+      await sleep(500);
+
+      // cursor types curl command into box1
+      await type(document.getElementById('curlCmd'), CURL_CMD);
+      show('hint');
+      await sleep(500);
+
+      // move cursor into box2 BEFORE fading it in — blinks in empty code shell
+      document.getElementById('installCmd').appendChild(document.getElementById('cursor'));
+      show('label2');
+      await sleep(200);
+      show('box2');
+      await sleep(400);
+
+      // cursor types ./install.sh into box2
+      await type(document.getElementById('installCmd'), './install.sh');
+      await sleep(600);
+
+      // line 3 fades in
+      show('line3');
+      await sleep(700);
+
+      // verdict label then box
+      show('fishLabel');
+      await sleep(350);
+      show('fishSection');
+      await sleep(500);
+
+      // cursor done
+      document.getElementById('cursor').remove();
+    }
+
+    function chooseFate(choice) {
+      document.getElementById('fishEmoji').classList.add('frozen');
+      document.getElementById('btnBlock').disabled = true;
+      document.getElementById('btnAllow').disabled = true;
+
+      var outcome = document.getElementById('fateOutcome');
+
+      if (choice === 'block') {
+        outcome.innerHTML =
+          'and nemo there to wield it. 👍' +
+          '<a href="dist/highlytechnicalshit.com-v0.2.0.zip" download>⬇ download the stack</a>';
+        outcome.classList.add('show');
+      } else {
+        outcome.innerHTML = 'one does not simply ship it.';
+        outcome.classList.add('show');
+        setTimeout(function() {
+          outcome.innerHTML = '<a href="https://www.ups.com/" target="_blank" rel="noopener" style="color:#f85149">🤦 no download for you →</a>';
+        }, 2400);
+        setTimeout(function() {
+          window.location.href = 'https://www.ups.com/';
+        }, 4200);
+      }
+    }
+
+    // copy text nodes only — excludes cursor span
+    function copyEl(srcId, btnId) {
+      var code = document.getElementById(srcId);
+      var text = '';
+      code.childNodes.forEach(function(n) {
+        if (n.nodeType === Node.TEXT_NODE) text += n.textContent;
+      });
+      var btn = document.getElementById(btnId);
+      navigator.clipboard.writeText(text.trim()).then(function() {
+        btn.textContent = 'Copied!';
+        btn.classList.add('copied');
+        setTimeout(function() { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 2000);
+      }).catch(function() {
+        btn.textContent = 'Failed';
+        setTimeout(function() { btn.textContent = 'Copy'; }, 2000);
+      });
+    }
+
+    run();
+  </script>
+</body>
+</html>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      background: #0d1117;
+      color: #e6edf3;
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      padding: 2rem;
+      gap: 0;
+    }
+
+    /* ── Title ── */
     h1 {
       font-size: clamp(1.5rem, 5vw, 2.5rem);
       font-weight: 700;

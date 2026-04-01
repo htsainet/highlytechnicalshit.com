@@ -2,13 +2,13 @@
 # bootstrap.sh — Clone the AI stack repo and launch the installer
 #
 # Usage (fresh machine):
-#   bash <(curl -fsSL https://raw.githubusercontent.com/htsainet/ubuntu-ai-stack/refs/heads/main/bootstrap.sh)
+#   bash <(curl -fsSL https://raw.githubusercontent.com/htsainet/hts-ai-stack/refs/heads/main/bootstrap.sh)
 #
 # After NVIDIA driver install the script will ask you to reboot.
-# Then just run:  cd ~/github/ubuntu-ai-stack && ./install.sh
+# Then just run:  cd ~/github/hts-ai-stack && ./install.sh
 set -euo pipefail
 
-CLONE_DIR="${CLONE_DIR:-$HOME/github/ubuntu-ai-stack}"
+CLONE_DIR="${CLONE_DIR:-$HOME/github/hts-ai-stack}"
 
 if [ -d "$CLONE_DIR/.git" ]; then
   echo "[INFO] Repo already exists at $CLONE_DIR — pulling latest..."
@@ -18,9 +18,9 @@ else
   sudo apt-get update -qq
   sudo apt-get install -y git curl
 
-  echo "[INFO] Cloning ubuntu-ai-stack → $CLONE_DIR ..."
+  echo "[INFO] Cloning hts-ai-stack → $CLONE_DIR ..."
   mkdir -p "$(dirname "$CLONE_DIR")"
-  git clone https://github.com/htsainet/ubuntu-ai-stack.git "$CLONE_DIR"
+  git clone https://github.com/htsainet/hts-ai-stack.git "$CLONE_DIR"
 fi
 
 cd "$CLONE_DIR"

@@ -9,6 +9,27 @@
 set -euo pipefail
 
 CLONE_DIR="${CLONE_DIR:-$HOME/hts/hts-ai-stack}"
+OLD_CLONE_DIR="$HOME/github/hts-ai-stack"
+
+# Offer to migrate from the old install path if new path doesn't exist yet
+if [ ! -d "$CLONE_DIR" ] && [ -d "$OLD_CLONE_DIR/.git" ]; then
+  echo ""
+  echo "[INFO] Found existing install at old path: $OLD_CLONE_DIR"
+  echo "       New path: $CLONE_DIR"
+  echo ""
+  read -r -p "Migrate it now? [Y/n] " migrate
+  migrate="${migrate:-Y}"
+  if [[ "$migrate" =~ ^[Yy]$ ]]; then
+    mkdir -p "$(dirname "$CLONE_DIR")"
+    mv "$OLD_CLONE_DIR" "$CLONE_DIR"
+    echo "[OK] Moved $OLD_CLONE_DIR → $CLONE_DIR"
+    # Clean up old parent dir if now empty
+    rmdir "$HOME/github" 2>/dev/null && echo "[INFO] Removed empty $HOME/github" || true
+  else
+    echo "[INFO] Skipping migration — using old path as-is"
+    CLONE_DIR="$OLD_CLONE_DIR"
+  fi
+fi
 
 if [ -d "$CLONE_DIR/.git" ]; then
   echo "[INFO] Repo already exists at $CLONE_DIR — pulling latest..."

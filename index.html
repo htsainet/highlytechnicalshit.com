@@ -258,11 +258,17 @@
     footer {
       position: fixed;
       bottom: 1.25rem;
-      color: #484f58;
-      font-size: 0.8rem;
+      color: #8b949e;
+      font-size: 0.92rem;
     }
-    footer a { color: #484f58; text-decoration: none; }
-    footer a:hover { color: #8b949e; }
+    footer a { color: #8b949e; text-decoration: none; }
+    footer a:hover { color: #e6edf3; }
+    @keyframes fresh-glow {
+      0%, 100% { text-shadow: 0 0 6px rgba(63,185,80,0.4), 0 0 12px rgba(63,185,80,0.2); color: #8b949e; }
+      50%       { text-shadow: 0 0 10px rgba(63,185,80,0.8), 0 0 22px rgba(63,185,80,0.4); color: #56d364; }
+    }
+    footer.fresh { animation: fresh-glow 2.4s ease-in-out infinite; }
+    footer.fresh a { color: inherit; }
   </style>
 </head>
 <body>
@@ -330,7 +336,14 @@
   <!-- Fate link (download / redirect) -->
   <div class="fate-link" id="fateLink"></div>
 
-  <footer>ubuntu-ai-stack v0.3.0 · March 31, 2026 · <a href="https://github.com/htsainet/ubuntu-ai-stack/releases/tag/v0.3.0">release notes</a></footer>
+  <footer id="siteFooter">ubuntu-ai-stack v0.3.0 · released March 31, 2026 · <a href="https://github.com/htsainet/ubuntu-ai-stack/releases/tag/v0.3.0">release notes</a></footer>
+  <script>
+    (function() {
+      var releaseDate = new Date('2026-03-31');
+      var age = (Date.now() - releaseDate.getTime()) / 86400000;
+      if (age >= 0 && age <= 7) document.getElementById('siteFooter').classList.add('fresh');
+    })();
+  </script>
 
   <script>
     var CURL_CMD = 'curl -sSL https://highlytechnicalshit.com/bootstrap.sh | bash';

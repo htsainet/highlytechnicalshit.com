@@ -267,7 +267,7 @@
       0%, 100% { text-shadow: 0 0 6px rgba(63,185,80,0.4), 0 0 12px rgba(63,185,80,0.2); color: #8b949e; }
       50%       { text-shadow: 0 0 10px rgba(63,185,80,0.8), 0 0 22px rgba(63,185,80,0.4); color: #56d364; }
     }
-    footer.fresh { animation: fresh-glow 2.4s ease-in-out infinite; }
+    footer.fresh { animation: fresh-glow 2.4s ease-in-out infinite; bottom: auto; top: 1.25rem; }
     footer.fresh a { color: inherit; }
   </style>
 </head>
@@ -282,8 +282,6 @@
       <code id="curlCmd"><span class="cursor" id="cursor"></span></code>
       <button class="copy-btn" id="copyBtn1" onclick="copyEl('curlCmd','copyBtn1')">Copy</button>
     </div>
-    <p class="hint" id="hint">Always <a href="https://raw.githubusercontent.com/htsainet/highlytechnicalshit.com/main/bootstrap.sh"
-        target="_blank" rel="noopener">inspect the script</a> before running it.</p>
   </div>
 
   <!-- Line 2 label — fades in above install box -->

@@ -334,10 +334,10 @@
   <!-- Fate link (download / redirect) -->
   <div class="fate-link" id="fateLink"></div>
 
-  <footer id="siteFooter">ubuntu-ai-stack v0.3.0 · released March 31, 2026</footer>
+  <footer id="siteFooter">ubuntu-ai-stack v0.3.5 · released April 1, 2026</footer>
   <script>
     (function() {
-      var releaseDate = new Date('2026-03-31');
+      var releaseDate = new Date('2026-04-01');
       var age = (Date.now() - releaseDate.getTime()) / 86400000;
       if (age >= 0 && age <= 7) {
         var f = document.getElementById('siteFooter');
@@ -440,7 +440,7 @@
         setTimeout(async function() {
           await typeFresh(document.getElementById('nemoCmd'), 'nemoclaw my-assistant connect', 45);
           await sleep(600);
-          link.innerHTML = '<a class="dl-btn" href="dist/ubuntu-ai-stack-v0.3.0.zip" download>⬇ download the ubuntu ai stack v0.3.0</a>';
+          link.innerHTML = '<a class="dl-btn" href="dist/ubuntu-ai-stack-v0.3.5.zip" download>⬇ download the ubuntu ai stack v0.3.5</a>';
           link.classList.add('show');
         }, 800);
       } else {

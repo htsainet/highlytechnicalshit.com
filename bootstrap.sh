@@ -23,5 +23,58 @@ else
   git clone https://github.com/htsainet/hts-ai-stack.git "$CLONE_DIR"
 fi
 
-cd "$CLONE_DIR"
-exec bash ./install.sh "$@"
+# Verify the repo is present and has expected structure
+if [ ! -f "$CLONE_DIR/install.sh" ]; then
+  echo ""
+  echo "[ERROR] Clone appears incomplete — install.sh not found in $CLONE_DIR"
+  echo ""
+  echo "  Download the latest zip manually:"
+  echo "  → https://highlytechnicalshit.com"
+  echo ""
+  echo "  Scroll to 'You must choose carefully how to wield it.'"
+  echo "  and click the 'Default Deny' button to download the zip."
+  echo ""
+  read -r -p "Press Enter once the download is complete..."
+
+  DOWNLOADS_DIR="$HOME/Downloads"
+  ZIP_FILE=$(find "$DOWNLOADS_DIR" -maxdepth 1 -name "hts-ai-stack*.zip" -printf "%T@ %p\n" 2>/dev/null \
+    | sort -rn | head -1 | cut -d' ' -f2-)
+
+  if [ -z "$ZIP_FILE" ]; then
+    echo ""
+    echo "[ERROR] No hts-ai-stack*.zip found in $DOWNLOADS_DIR"
+    echo "  Please move the downloaded zip there and re-run bootstrap.sh"
+    exit 1
+  fi
+
+  echo "[INFO] Found: $ZIP_FILE"
+  echo "[INFO] Extracting to $(dirname "$CLONE_DIR") ..."
+  mkdir -p "$(dirname "$CLONE_DIR")"
+  unzip -q "$ZIP_FILE" -d "$(dirname "$CLONE_DIR")"
+
+  # GitHub zips extract to a subdirectory like hts-ai-stack-main — normalise it
+  EXTRACTED=$(find "$(dirname "$CLONE_DIR")" -maxdepth 1 -type d -name "hts-ai-stack*" ! -path "$CLONE_DIR" | head -1)
+  if [ -n "$EXTRACTED" ] && [ "$EXTRACTED" != "$CLONE_DIR" ]; then
+    mv "$EXTRACTED" "$CLONE_DIR"
+  fi
+
+  if [ ! -f "$CLONE_DIR/install.sh" ]; then
+    echo "[ERROR] Extraction failed — install.sh still not found in $CLONE_DIR"
+    exit 1
+  fi
+
+  echo "[OK] Extracted successfully to $CLONE_DIR"
+fi
+
+echo "[OK] Repo ready at $CLONE_DIR"
+echo ""
+
+read -r -p "Run install.sh now? [Y/n] " response
+response="${response:-Y}"
+if [[ "$response" =~ ^[Yy]$ ]]; then
+  cd "$CLONE_DIR"
+  exec bash ./install.sh "$@"
+else
+  echo "[INFO] Skipping install. To run later:"
+  echo "  cd $CLONE_DIR && ./install.sh"
+fi

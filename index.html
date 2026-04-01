@@ -330,6 +330,8 @@
   <!-- Fate link (download / redirect) -->
   <div class="fate-link" id="fateLink"></div>
 
+  <footer>ubuntu-ai-stack v0.3.0 · March 31, 2026 · <a href="https://github.com/htsainet/ubuntu-ai-stack/releases/tag/v0.3.0">release notes</a></footer>
+
   <script>
     var CURL_CMD = 'curl -sSL https://highlytechnicalshit.com/bootstrap.sh | bash';
 
@@ -423,7 +425,7 @@
         setTimeout(async function() {
           await typeFresh(document.getElementById('nemoCmd'), 'nemoclaw my-assistant connect', 45);
           await sleep(600);
-          link.innerHTML = '<a class="dl-btn" href="dist/ubuntu-ai-stack-0.2.0.zip" download>⬇ download the ubuntu ai stack v.0.2.00</a>';
+          link.innerHTML = '<a class="dl-btn" href="dist/ubuntu-ai-stack-v0.3.0.zip" download>⬇ download the ubuntu ai stack v0.3.0</a>';
           link.classList.add('show');
         }, 800);
       } else {

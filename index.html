@@ -339,7 +339,12 @@
     (function() {
       var releaseDate = new Date('2026-03-31');
       var age = (Date.now() - releaseDate.getTime()) / 86400000;
-      if (age >= 0 && age <= 7) document.getElementById('siteFooter').classList.add('fresh');
+      if (age >= 0 && age <= 7) {
+        var f = document.getElementById('siteFooter');
+        f.classList.add('fresh');
+        f.style.bottom = 'auto';
+        f.style.top = '1.25rem';
+      }
     })();
   </script>
 

@@ -5,10 +5,10 @@
 #   bash <(curl -fsSL https://raw.githubusercontent.com/htsainet/hts-ai-stack/refs/heads/main/bootstrap.sh)
 #
 # After NVIDIA driver install the script will ask you to reboot.
-# Then just run:  cd ~/github/hts-ai-stack && ./install.sh
+# Then just run:  cd ~/hts/hts-ai-stack && ./install.sh
 set -euo pipefail
 
-CLONE_DIR="${CLONE_DIR:-$HOME/github/hts-ai-stack}"
+CLONE_DIR="${CLONE_DIR:-$HOME/hts/hts-ai-stack}"
 
 if [ -d "$CLONE_DIR/.git" ]; then
   echo "[INFO] Repo already exists at $CLONE_DIR — pulling latest..."

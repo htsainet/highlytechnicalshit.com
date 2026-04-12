@@ -142,7 +142,7 @@
     }
     .verdict-cmd code {
       flex: 1;
-      white-space: pre-wrap;
+      white-space: nowrap;
       overflow-x: auto;
       scrollbar-width: thin;
       scrollbar-color: #30363d transparent;
@@ -440,7 +440,7 @@
         setTimeout(async function() {
           await typeFresh(document.getElementById('nemoCmd'), 'nemoclaw my-assistant connect', 45);
           await sleep(2000);
-          document.getElementById('nemoCmd').appendChild(document.createElement('br'));
+          document.getElementById('nemoCmd').textContent = '';
           await typeFresh(document.getElementById('nemoCmd'), 'htsclaw  my-assistant connect', 45);
           await sleep(600);
           link.innerHTML = '<a class="dl-btn" href="dist/hts-ai-stack-v0.4.0-rc1.zip" download>⬇ download the hts ai stack v0.4.0-rc1</a>';

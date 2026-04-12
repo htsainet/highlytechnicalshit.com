@@ -379,6 +379,18 @@
       cursor.remove();
     }
 
+    async function typeErase(el, speed) {
+      speed = speed || 28;
+      var cursor = document.createElement('span');
+      cursor.className = 'cursor';
+      el.appendChild(cursor);
+      while (cursor.previousSibling) {
+        cursor.previousSibling.remove();
+        await sleep(speed + (Math.random() * 12 | 0));
+      }
+      cursor.remove();
+    }
+
     function show(id) { document.getElementById(id).classList.add('show'); }
 
     async function run() {
@@ -440,7 +452,7 @@
         setTimeout(async function() {
           await typeFresh(document.getElementById('nemoCmd'), 'nemoclaw my-assistant connect', 45);
           await sleep(2000);
-          document.getElementById('nemoCmd').textContent = '';
+          await typeErase(document.getElementById('nemoCmd'), 28);
           await typeFresh(document.getElementById('nemoCmd'), 'htsclaw  my-assistant connect', 45);
           await sleep(600);
           link.innerHTML = '<a class="dl-btn" href="dist/hts-ai-stack-v0.4.0-rc1.zip" download>⬇ download the hts ai stack v0.4.0-rc1</a>';

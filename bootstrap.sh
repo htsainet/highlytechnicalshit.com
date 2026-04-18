@@ -2,7 +2,7 @@
 # bootstrap.sh — Fresh machine setup: auth, clone, PowerShell, Docker, NVIDIA
 #
 # Usage (fresh machine, before repo exists):
-#   bash <(curl -fsSL https://raw.githubusercontent.com/htsainet/hts-ai-stack/refs/heads/main/bootstrap.sh)
+#   bash <(curl -fsSL https://raw.githubusercontent.com/htsainet/highlytechnicalshit.com/refs/heads/main/bootstrap.sh)
 #
 # What it does:
 #   1. Installs prerequisites (curl, gpg, git, chrony, gh)
@@ -27,7 +27,7 @@ ok()   { echo -e "${GREEN}[ OK]${NC} $*"; }
 
 CLONE_DIR="${CLONE_DIR:-$HOME/hts/hts-ai-stack}"
 BOOTSTRAP_TIMEZONE="${BOOTSTRAP_TIMEZONE:-America/New_York}"
-REPO_SLUG="htsainet/hts-ai-stack"
+REPO_SLUG="htsai-net/hts-ai-stack-release"
 
 OLD_PATHS=(
   "$HOME/github/hts-ai-stack"

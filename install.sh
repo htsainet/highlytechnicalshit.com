@@ -81,7 +81,7 @@ _check_repo_dir_name() {
     REPO_DIR="$new_dir"
     info "Directory renamed → $REPO_DIR"
     warn "Reminder: update your VS Code workspace, shell bookmarks, and git remote URL."
-    warn "  git remote set-url origin https://github.com/htsainet/hts-ai-stack.git"
+    warn "  git remote set-url origin https://github.com/htsai-net/hts-ai-stack-release.git"
   else
     info "Skipped rename — continuing from existing path."
   fi

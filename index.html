@@ -334,10 +334,10 @@
   <!-- Fate link (download / redirect) -->
   <div class="fate-link" id="fateLink"></div>
 
-  <footer id="siteFooter">hts-ai-stack v0.4.0-rc1 · released April 12, 2026</footer>
+  <footer id="siteFooter">hts-ai-stack v0.4.0-rc2 · released April 18, 2026</footer>
   <script>
     (function() {
-      var releaseDate = new Date('2026-04-01');
+      var releaseDate = new Date('2026-04-18');
       var age = (Date.now() - releaseDate.getTime()) / 86400000;
       if (age >= 0 && age <= 7) {
         var f = document.getElementById('siteFooter');
@@ -455,7 +455,7 @@
           await typeErase(document.getElementById('nemoCmd'), 28);
           await typeFresh(document.getElementById('nemoCmd'), 'htsclaw  my-assistant connect', 45);
           await sleep(600);
-          link.innerHTML = '<a class="dl-btn" href="dist/hts-ai-stack-v0.4.0-rc1.zip" download>⬇ download the hts ai stack v0.4.0-rc1</a>';
+          link.innerHTML = '<a class="dl-btn" href="dist/hts-ai-stack-v0.4.0-rc2.zip" download>⬇ download the hts ai stack v0.4.0-rc2</a>';
           link.classList.add('show');
         }, 800);
       } else {

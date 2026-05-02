@@ -7,8 +7,10 @@
 #   3. If no config/stack.json: run setup menu (required first time)
 #      If config exists: ask whether to reconfigure or use existing
 #   4. Apply config/stack.json to .env via apply_config.sh
-#   5. Host prerequisites (docker, node, tools — idempotent; NVIDIA in bootstrap.sh)
+#   5. Host prerequisites via preflight.sh (nvidia CTK, docker, node, tools — idempotent)
 #   6. Stack convergence via converge.sh (all Docker services)
+#   7. Model warm-up (pull + load default model)
+#   8. Background pull of larger models for llama-swap routing
 #
 # Prerequisites:
 #   bootstrap.sh must have run first (installs Docker, NVIDIA drivers, reboots).
@@ -17,6 +19,17 @@
 #   --reconfigure      Always run setup menu even if config exists
 #   --skip-config      Skip setup wizard; still applies stack.json → .env
 #   --nuke-and-pave    Destroy the stack then rebuild from existing config
+#   --force-rebuild[=svc[,svc...]]
+#                      Rebuild locally-built Docker images (--no-cache --pull)
+#                      and recreate their containers before convergence. Use
+#                      this after editing any docker/*/Dockerfile so the
+#                      changes actually land; otherwise converge reuses the
+#                      cached image and container.
+#                      Without an argument, rebuilds every service that has a
+#                      `build:` stanza in docker-compose.yml.
+#                      With a comma-separated list, rebuilds only those
+#                      services — e.g. --force-rebuild=stable-diffusion
+#                      or --force-rebuild=stable-diffusion,comfyui
 #   --dry-run          Print actions without executing install scripts
 #   -h, --help         Show this help
 #
@@ -37,20 +50,25 @@
 
 set -euo pipefail
 
+if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
+  echo "[FAIL] Do not run as root (or with sudo). This script calls sudo internally where needed." >&2
+  exit 1
+fi
+
 CYAN='\033[0;36m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 RED='\033[0;31m'; BOLD='\033[1m'; NC='\033[0m'
 
 # LOG_FILE is set after REPO_DIR is resolved (see below); functions reference it by name.
-_log()   { echo "[$(date '+%F %T')] [$1] $2" >> "${LOG_FILE:-/dev/null}" 2>/dev/null || true; }
+_log()   { [[ -w "${LOG_FILE:-}" || -z "${LOG_FILE:-}" ]] && echo "[$(date '+%F %T')] [$1] $2" >> "${LOG_FILE:-/dev/null}" 2>/dev/null || true; }
 info()   { echo -e "${GREEN}[INFO]${NC} $*"; _log INFO "$*"; }
 warn()   { echo -e "${YELLOW}[WARN]${NC} $*"; _log WARN "$*"; }
 fail()   { echo -e "${RED}[FAIL]${NC} $*"; [[ -n "${LOG_FILE:-}" ]] && echo -e "${RED}[FAIL]${NC} See log: $LOG_FILE"; _log FAIL "$*"; exit 1; }
 step()   { echo -e "\n${CYAN}${BOLD}══ $* ══${NC}"; _log STEP "══ $* ══"; }
 banner() {
   echo -e "\n${CYAN}${BOLD}╔══════════════════════════════════════════════════════╗${NC}"
-  echo -e "${CYAN}${BOLD}║        AI STACK — INSTALLER                         ║${NC}"
+  echo -e "${CYAN}${BOLD}║                HTS AI Stack Installer                ║${NC}"
   echo -e "${CYAN}${BOLD}╚══════════════════════════════════════════════════════╝${NC}\n"
-  _log INFO "=== AI STACK INSTALLER STARTED ==="
+  _log INFO "=== HTS AI STACK INSTALLER STARTED ==="
 }
 
 # Detect if the repo is still checked out with the old directory name and offer to rename it.
@@ -92,17 +110,27 @@ RECONFIGURE=false
 SKIP_CONFIG=false
 NUKE_AND_PAVE=false
 DRY_RUN=false
+FORCE_REBUILD=false
+FORCE_REBUILD_SERVICES=""   # empty = all buildable services; otherwise comma-list
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --reconfigure)     RECONFIGURE=true;    shift ;;
     --skip-config)     SKIP_CONFIG=true;     shift ;;
     --nuke-and-pave)   NUKE_AND_PAVE=true;  shift ;;
+    --force-rebuild)   FORCE_REBUILD=true;  shift ;;
+    --force-rebuild=*) FORCE_REBUILD=true; FORCE_REBUILD_SERVICES="${1#*=}"; shift ;;
     --dry-run)         DRY_RUN=true;        shift ;;
     -h|--help)      grep '^#' "$0" | sed 's/^# \?//'; exit 0 ;;
     *) fail "Unknown option: $1" ;;
   esac
 done
+
+# Export so converge.sh / compose.sh (compose_up) can honor the flag without
+# having to thread it through every component script.
+if "$FORCE_REBUILD"; then
+  export HTS_FORCE_REBUILD=1
+fi
 
 # ── Locate repo ───────────────────────────────────────────────────────────────
 REPO_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -116,18 +144,20 @@ _check_repo_dir_name
 # ── Logging ───────────────────────────────────────────────────────────────────
 _LOG_STAMP="$(date +%Y%m%d-%H%M%S)"
 LOG_FILE="/var/log/ai-stack/install-${_LOG_STAMP}.log"
-if ! mkdir -p "$(dirname "$LOG_FILE")" 2>/dev/null; then
+if ! mkdir -p "$(dirname "$LOG_FILE")" 2>/dev/null || ! touch "$LOG_FILE" 2>/dev/null; then
   LOG_FILE="$REPO_DIR/logs/install-${_LOG_STAMP}.log"
   mkdir -p "$(dirname "$LOG_FILE")"
 fi
 echo "Logging to: $LOG_FILE"
+export LOG_FILE
 trap '_log ERROR "Unexpected failure at line $LINENO (exit $?)"' ERR
 
 CONFIG_DIR="$REPO_DIR/config"
 BACKUP_BASE="$CONFIG_DIR/backups"
 STACK_JSON="$CONFIG_DIR/stack.json"
 ENV_FILE="$REPO_DIR/.env"
-SETUP_MENU="$REPO_DIR/config/wizard/ai_stack_setup.sh"
+SETUP_MENU="$REPO_DIR/config/wizard/configure.py"
+SETUP_MENU_LEGACY="$REPO_DIR/config/wizard/ai_stack_setup.sh"
 APPLY_SCRIPT="$REPO_DIR/config/wizard/apply_config.sh"
 
 # ── Helpers ───────────────────────────────────────────────────────────────────
@@ -250,14 +280,7 @@ if ! "$SKIP_CONFIG"; then
 
   if "$RUN_MENU"; then
     [ -f "$SETUP_MENU" ] || fail "Setup menu not found: $SETUP_MENU"
-    # Clean up any stale .venv left by old Python-based approach
-    VENV_DIR="$(dirname "$SETUP_MENU")/.venv"
-    [ -d "$VENV_DIR" ] && rm -rf "$VENV_DIR" && info "Removed stale .venv"
-    # Pre-scan for existing services so the wizard can pre-fill sensible defaults
-    if [ -f "$REPO_DIR/scripts/install/00-check-conflicts.sh" ]; then
-      bash "$REPO_DIR/scripts/install/00-check-conflicts.sh" --detect-only 2>/dev/null || true
-    fi
-    bash "$SETUP_MENU"
+    python3 "$SETUP_MENU"
   fi
 fi
 
@@ -297,18 +320,91 @@ if [[ "$_SUDO_KEEPALIVE" == "true" ]]; then
 fi
 
 if ! "$DRY_RUN"; then
-  # NVIDIA drivers + CUDA handled by bootstrap.sh (always last — requires reboot)
-  bash "$REPO_DIR/scripts/host/docker.sh"   # idempotent — bootstrap already ran this
-  bash "$REPO_DIR/scripts/host/node.sh"     # NVM + Node.js
-  bash "$REPO_DIR/scripts/host/tools.sh"    # jq, .env tokens, backend config (dev tools gated by stack.json)
+  bash "$REPO_DIR/scripts/host/preflight.sh"
 else
-  info "[dry-run] would run: docker.sh, node.sh, tools.sh"
+  info "[dry-run] would run: scripts/host/preflight.sh (nvidia, docker, node, tools)"
 fi
 
 # ── Step 5: Validate .env tokens ─────────────────────────────────────────────
 step "Preflight — validate .env"
 ensure_env_var_set "WEBUI_SECRET_KEY"
 info ".env tokens present"
+
+# ── Step 5.5: Force rebuild of locally-built images (opt-in) ─────────────────
+# When --force-rebuild is passed, rebuild every service with a build: stanza
+# using --no-cache so any Dockerfile edits actually land, and remove the
+# existing containers so compose_up can recreate them from the new image.
+# compose_up itself will then run with --force-recreate (see compose.sh)
+# because HTS_FORCE_REBUILD is exported.
+if "$FORCE_REBUILD"; then
+  step "Force rebuild (locally-built images)"
+  if "$DRY_RUN"; then
+    info "[dry-run] would: docker compose build --no-cache <buildable services>"
+    info "[dry-run] would: docker compose rm -sf <buildable services>"
+  else
+    # Enumerate services with a build: stanza directly from docker-compose.yml
+    # (profile-agnostic). If the user passed --force-rebuild=svc1,svc2, filter
+    # to just those — and fail loudly if any requested service is either
+    # unknown or not locally-built, so typos don't silently no-op.
+    _ALL_BUILDABLE=$(python3 - "$REPO_DIR/docker-compose.yml" <<'PYEOF' 2>/dev/null || true
+import sys, yaml
+with open(sys.argv[1]) as f:
+    doc = yaml.safe_load(f) or {}
+svcs = doc.get("services", {}) or {}
+print(" ".join(n for n, s in svcs.items() if isinstance(s, dict) and "build" in s))
+PYEOF
+)
+    if [[ -n "$FORCE_REBUILD_SERVICES" ]]; then
+      _REQUESTED="${FORCE_REBUILD_SERVICES//,/ }"
+      _BUILDABLE=""
+      for _svc in $_REQUESTED; do
+        if [[ " $_ALL_BUILDABLE " == *" $_svc "* ]]; then
+          _BUILDABLE+="${_BUILDABLE:+ }$_svc"
+        else
+          fail "--force-rebuild: '$_svc' is not a locally-built service. Valid options: $_ALL_BUILDABLE"
+        fi
+      done
+    else
+      _BUILDABLE="$_ALL_BUILDABLE"
+    fi
+
+    if [[ -z "${_BUILDABLE// }" ]]; then
+      warn "No buildable services found — nothing to rebuild."
+    else
+      # Collect every profile those services use so compose will actually see
+      # them. Services with no profile are always visible and need no flags.
+      _BUILD_PROFILES=$(python3 - "$REPO_DIR/docker-compose.yml" "$_BUILDABLE" <<'PYEOF' 2>/dev/null || true
+import sys, yaml
+with open(sys.argv[1]) as f:
+    doc = yaml.safe_load(f) or {}
+svcs = doc.get("services", {}) or {}
+wanted = set(sys.argv[2].split())
+profs = set()
+for n, s in svcs.items():
+    if n not in wanted or not isinstance(s, dict):
+        continue
+    for p in (s.get("profiles") or []):
+        profs.add(p)
+print(" ".join(sorted(profs)))
+PYEOF
+)
+      _PROFILE_ARGS=()
+      for _p in $_BUILD_PROFILES; do
+        _PROFILE_ARGS+=(--profile "$_p")
+      done
+
+      info "Rebuilding (no-cache, --pull): ${_BUILDABLE}"
+      # shellcheck disable=SC2086  # intentional word-splitting over service list
+      docker compose -f "$REPO_DIR/docker-compose.yml" --env-file "$ENV_FILE" \
+        "${_PROFILE_ARGS[@]}" build --no-cache --pull --progress=plain ${_BUILDABLE} \
+        2>&1 | tee -a "$LOG_FILE"
+      info "Removing old containers so compose_up can recreate them..."
+      # shellcheck disable=SC2086
+      docker compose -f "$REPO_DIR/docker-compose.yml" --env-file "$ENV_FILE" \
+        "${_PROFILE_ARGS[@]}" rm -sf ${_BUILDABLE} 2>&1 | tee -a "$LOG_FILE" || true
+    fi
+  fi
+fi
 
 # ── Step 6: Stack convergence ─────────────────────────────────────────────────
 step "Stack convergence"
@@ -319,10 +415,72 @@ else
   bash "$REPO_DIR/scripts/utils/converge.sh" --yes
 fi
 
-# Post-converge: load default chat model
+# Post-converge: load default model
 if ! "$DRY_RUN"; then
-  step "Chat mode"
-  bash "$REPO_DIR/scripts/components/ollama/ollama.sh" --swap "mean" || true
+  step "Model warm-up"
+  bash "$REPO_DIR/scripts/components/ollama/ollama.sh" --warm || true
+fi
+
+# Additional-models prompt: opt the user in to pulling the remaining
+# registry.json `env=prod` models (starter already pulled by converge).
+# Gated on TTY so piped / CI runs are unchanged. See
+# docs/planning/autopilot-mvp-stability-pass.md Task 4.
+if ! "$DRY_RUN" && [[ -t 0 && -t 1 ]]; then
+  step "Additional models"
+
+  _ADDL_SUMMARY="$(
+    OLLAMA_MODEL="${OLLAMA_MODEL:-smollm2:135m}" \
+    REGISTRY="$REPO_DIR/scripts/install/models/registry.json" \
+    python3 - <<'PY' 2>/dev/null || true
+import json, os, sys
+path = os.environ["REGISTRY"]
+starter = os.environ.get("OLLAMA_MODEL", "")
+try:
+    with open(path) as fh:
+        reg = json.load(fh)
+except Exception as e:
+    print(f"ERR:registry-unreadable:{e}", end="")
+    sys.exit(0)
+prod = [m for m in reg.get("ollama", []) if "prod" in (m.get("env") or [])]
+extras = [m for m in prod if m.get("model") != starter]
+count = len(extras)
+total_mb = sum(int(m.get("vram_mb") or 0) for m in extras)
+total_gb = total_mb / 1024.0
+print(f"{count}|{total_gb:.1f}")
+PY
+  )"
+
+  if [[ "$_ADDL_SUMMARY" == *"|"* ]]; then
+    _ADDL_COUNT="${_ADDL_SUMMARY%|*}"
+    _ADDL_SIZE_GB="${_ADDL_SUMMARY#*|}"
+    if [[ "$_ADDL_COUNT" -gt 0 ]]; then
+      echo ""
+      echo "The registry has $_ADDL_COUNT additional prod models (~${_ADDL_SIZE_GB} GB"
+      echo "approx VRAM footprint) you can pre-stage now so llama-swap can route"
+      echo "to them without a cold pull on first use."
+      echo ""
+      read -r -p "Pull them now in the background? [Y/n] " _addl_reply
+      _addl_reply="${_addl_reply:-Y}"
+      if [[ "$_addl_reply" =~ ^[Yy]$ ]]; then
+        _ADDL_LOG="$REPO_DIR/logs/ollama-background-pull-$(date +%Y%m%d-%H%M%S).log"
+        _ADDL_PID="$REPO_DIR/logs/ollama-background-pull.pid"
+        mkdir -p "$(dirname "$_ADDL_LOG")"
+        nohup "$REPO_DIR/scripts/components/ollama/ollama.sh" --pull-models \
+          > "$_ADDL_LOG" 2>&1 &
+        disown
+        echo $! > "$_ADDL_PID"
+        ok "Background pull started (PID $(cat "$_ADDL_PID"))."
+        info "Tail progress: tail -f $_ADDL_LOG"
+      else
+        info "Skipping. To pull later:"
+        info "  ./scripts/components/ollama/ollama.sh --pull-models"
+      fi
+    else
+      info "No additional prod models in registry beyond the starter — nothing to pre-stage."
+    fi
+  else
+    warn "Could not read model registry — skipping additional-models prompt."
+  fi
 fi
 
 # ── Done ──────────────────────────────────────────────────────────────────────
@@ -337,8 +495,8 @@ echo "  1. View the dashboard:"
 echo "     → http://localhost:80"
 echo ""
 echo "  2. LLM router (dual-inference):"
-echo "     → http://localhost:8080      (llama-swap API)"
-echo "     → http://localhost:8080/ui   (llama-swap dashboard)"
+echo "     → http://localhost:8081      (llama-swap API)"
+echo "     → http://localhost:8081/ui   (llama-swap dashboard)"
 echo ""
 echo "  3. Reconfigure at any time:"
 echo "     → ./install.sh --reconfigure"

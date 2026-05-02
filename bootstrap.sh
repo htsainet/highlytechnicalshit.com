@@ -2,20 +2,28 @@
 # bootstrap.sh — Fresh machine setup: auth, clone, PowerShell, Docker, NVIDIA
 #
 # Usage (fresh machine, before repo exists):
-#   bash <(curl -fsSL https://raw.githubusercontent.com/htsainet/highlytechnicalshit.com/refs/heads/main/bootstrap.sh)
+#   bash <(curl -fsSL https://raw.githubusercontent.com/htsai-net/hts-ai-stack-release/refs/heads/main/bootstrap.sh)
 #
 # What it does:
-#   1. Installs prerequisites (curl, gpg, git, chrony, gh)
+#   1. Installs prerequisites (curl, gpg, git, chrony, gh, Brave browser)
 #   2. Authenticates GitHub CLI (browser flow — no password needed)
 #   3. Configures git identity from GitHub session
 #   4. Clones (or updates) the repo via gh
 #   5. Installs PowerShell 7 + Pester (so pre-commit tests work immediately)
-#   6. Installs Docker Engine (no NVIDIA dependency — ready after reboot)
-#   7. Installs NVIDIA drivers → prompts reboot (always last)
+#   6. Installs shellcheck (required by Test-RepoChecks shell lint gate)
+#   7. Installs Node.js 20 LTS + runs `npm ci` (markdownlint-cli2, cspell,
+#      jsonc-parser needed by the Pester repo-checks gate)
+#   8. Installs Docker Engine (no NVIDIA dependency — ready after reboot)
+#   9. Installs NVIDIA drivers → prompts reboot (always last)
 #
 # After reboot, run:  cd ~/hts/hts-ai-stack && ./install.sh
 # install.sh handles: CUDA toolkit, nvidia-container-toolkit (needs Docker+drivers), stack setup
 set -euo pipefail
+
+if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
+  echo "[FAIL] Do not run as root (or with sudo). This script calls sudo internally where needed." >&2
+  exit 1
+fi
 
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
 info() { echo -e "${GREEN}[INFO]${NC} $*"; }
@@ -58,6 +66,37 @@ fi
 sudo apt-get update -qq
 sudo apt-get install -y -qq curl gpg git chrony ca-certificates apt-transport-https skopeo jq
 
+# Brave browser (real .deb, not snap) — needed for gh auth --web inside xrdp
+# GNOME sessions where the Firefox snap fails on the snap cgroup confinement
+# check. Installed before Step 2 so the GitHub browser sign-in flow works.
+if command -v brave-browser >/dev/null 2>&1; then
+  skip "Brave browser ($(brave-browser --version 2>/dev/null | head -1))"
+else
+  info "Installing Brave browser..."
+  curl -fsSL https://brave-browser-apt-release.s3.brave.com/brave-browser-archive-keyring.gpg \
+    | sudo tee /usr/share/keyrings/brave-browser-archive-keyring.gpg >/dev/null
+  echo "deb [signed-by=/usr/share/keyrings/brave-browser-archive-keyring.gpg arch=amd64] https://brave-browser-apt-release.s3.brave.com/ stable main" \
+    | sudo tee /etc/apt/sources.list.d/brave-browser-release.list >/dev/null
+  sudo apt-get update -qq
+  sudo apt-get install -y -qq brave-browser
+  ok "Brave browser installed."
+fi
+
+# Desktop shortcut (GNOME — for xrdp users who want a clickable icon)
+_brave_src="/usr/share/applications/brave-browser.desktop"
+_brave_desktop="$HOME/Desktop/brave-browser.desktop"
+if [[ -f "$_brave_src" ]]; then
+  mkdir -p "$HOME/Desktop"
+  if [[ ! -f "$_brave_desktop" ]]; then
+    cp "$_brave_src" "$_brave_desktop"
+    chmod +x "$_brave_desktop"
+    # GNOME 42+ requires the launcher to be marked trusted
+    gio set "$_brave_desktop" metadata::trusted true 2>/dev/null || true
+    info "Brave desktop shortcut created at $_brave_desktop"
+  fi
+fi
+unset _brave_src _brave_desktop
+
 sudo timedatectl set-timezone "$BOOTSTRAP_TIMEZONE"
 info "Timezone: $BOOTSTRAP_TIMEZONE"
 
@@ -83,20 +122,13 @@ gh auth setup-git >/dev/null 2>&1 || true
 ok "GitHub CLI authenticated."
 
 # ── Step 2b: GitHub Copilot CLI ──────────────────────────────────────────────
-# gh extension install uses the web token established above — no password prompt.
-# gh auth refresh ensures the token carries the copilot scope before first use.
-if gh extension list 2>/dev/null | grep -q 'gh-copilot'; then
-  skip "GitHub Copilot CLI extension"
+# Installed via snap as the standalone copilot-cli agent (invoked as `copilot`).
+if snap list copilot-cli &>/dev/null; then
+  skip "GitHub Copilot CLI (copilot-cli snap)"
 else
-  info "Installing GitHub Copilot CLI extension..."
-  gh extension install github/gh-copilot
-  ok "GitHub Copilot CLI installed — invoke with: gh copilot"
-fi
-
-# Ensure the stored token carries the copilot scope (browser flow, no password).
-if ! gh auth status --scopes 2>/dev/null | grep -q 'copilot'; then
-  info "Refreshing GitHub token for Copilot scope (browser flow)..."
-  gh auth refresh --hostname github.com --scopes "copilot" || true
+  info "Installing GitHub Copilot CLI via snap..."
+  sudo snap install copilot-cli
+  ok "GitHub Copilot CLI installed — invoke with: copilot"
 fi
 
 # ── Step 2c: Obsidian CLI ────────────────────────────────────────────────────
@@ -116,6 +148,69 @@ else
     info "After install, enable CLI in Settings → General → Command line interface"
   fi
 fi
+
+# ── Step 2d: OpenCode ────────────────────────────────────────────────────────
+# Terminal AI coding agent — available immediately after bootstrap without
+# waiting for install.sh.  Integrates with local Ollama / llama-swap once the
+# stack is running.  Docs: https://opencode.ai/docs
+_oc_bin="${HOME}/.opencode/bin/opencode"
+if command -v opencode >/dev/null 2>&1 || [[ -x "$_oc_bin" ]]; then
+  skip "OpenCode already installed"
+else
+  info "Installing OpenCode (terminal AI coding agent)..."
+  curl -fsSL https://opencode.ai/install | bash
+  hash -r 2>/dev/null || true
+  if command -v opencode >/dev/null 2>&1 || [[ -x "$_oc_bin" ]]; then
+    ok "OpenCode installed."
+  else
+    warn "opencode not found in PATH — open a new terminal or check ~/.opencode/bin"
+  fi
+fi
+unset _oc_bin
+
+# Pre-configure OpenCode to use the stack's llama-swap router at localhost:8081.
+# The canonical filename is opencode.json (current schema). If a stale
+# config.json with the old flat schema exists, back it up and remove it so
+# opencode stops rejecting it on startup.
+_oc_config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/opencode"
+_oc_legacy_file="$_oc_config_dir/config.json"
+_oc_config_file="$_oc_config_dir/opencode.json"
+mkdir -p "$_oc_config_dir"
+
+if [[ -f "$_oc_legacy_file" ]]; then
+  _oc_backup="$_oc_legacy_file.legacy.bak"
+  if [[ ! -f "$_oc_backup" ]]; then
+    cp -p "$_oc_legacy_file" "$_oc_backup"
+    info "Backed up legacy opencode config.json → $_oc_backup"
+  fi
+  rm -f "$_oc_legacy_file"
+  unset _oc_backup
+fi
+
+if [[ ! -f "$_oc_config_file" ]]; then
+  cat > "$_oc_config_file" <<'OCCONF'
+{
+  "$schema": "https://opencode.ai/config.json",
+  "provider": {
+    "local": {
+      "npm": "@ai-sdk/openai-compatible",
+      "name": "Local (llama-swap)",
+      "options": {
+        "baseURL": "http://localhost:8081/v1"
+      },
+      "models": {
+        "smollm2:135m":              { "name": "SmolLM2 135M" },
+        "qwen2.5:7b-instruct-q4_K_M": { "name": "Qwen2.5 7B Instruct" },
+        "bitnet":                    { "name": "BitNet (CPU)" }
+      }
+    }
+  },
+  "model": "local/smollm2:135m"
+}
+OCCONF
+  info "Created OpenCode config → llama-swap at localhost:8081"
+fi
+unset _oc_config_dir _oc_legacy_file _oc_config_file
 
 # ── Step 3: Git identity ──────────────────────────────────────────────────────
 step "3 — Git identity"
@@ -237,14 +332,51 @@ pwsh -NoLogo -NoProfile -Command "
 "
 ok "Pester ready"
 
-# ── Step 6: Docker Engine ─────────────────────────────────────────────────────
+# ── Step 6: shellcheck ───────────────────────────────────────────────────────
+# Required by tests/Test-RepoChecks.Tests.ps1 ('Shell checks: runs shellcheck');
+# without it the gate is silently skipped on every pre-commit run.
+step "6 — shellcheck"
+if command -v shellcheck &>/dev/null; then
+  skip "shellcheck ($(shellcheck --version | awk '/^version:/ {print $2}'))"
+else
+  info "Installing shellcheck..."
+  sudo apt-get install -y -qq shellcheck
+  ok "shellcheck installed: $(shellcheck --version | awk '/^version:/ {print $2}')"
+fi
+
+# ── Step 7: Node.js + repo npm dependencies ─────────────────────────────────
+# The Pester repo-checks gate (tests/Test-RepoChecks.Tests.ps1) shells out to
+# markdownlint-cli2, cspell, and node (jsonc-parser) via `npx --no-install`.
+# Those packages must already be resolved in the repo's node_modules — `npm ci`
+# installs them from package-lock.json. Node 20 LTS is pinned to match the
+# cspell ^8.x engine constraint.
+step "7 — Node.js + npm dependencies"
+
+if command -v node &>/dev/null && node --version 2>/dev/null | grep -qE '^v(20|22)\.'; then
+  skip "Node.js ($(node --version))"
+else
+  info "Installing Node.js 20 LTS via NodeSource..."
+  curl -fsSL https://deb.nodesource.com/setup_20.x | sudo -E bash -
+  sudo apt-get install -y -qq nodejs
+  ok "Node.js installed: $(node --version)"
+fi
+
+if [[ -f "$CLONE_DIR/package-lock.json" ]]; then
+  info "Installing repo npm dependencies (npm ci)..."
+  (cd "$CLONE_DIR" && npm ci --no-audit --no-fund --silent)
+  ok "npm dependencies installed in $CLONE_DIR/node_modules"
+else
+  warn "No package-lock.json at $CLONE_DIR — skipping npm ci."
+fi
+
+# ── Step 8: Docker Engine ─────────────────────────────────────────────────────
 # Install Docker before NVIDIA so that post-reboot nvidia-container-toolkit
 # can configure the daemon immediately (it requires Docker to already exist).
-step "6 — Docker Engine"
+step "8 — Docker Engine"
 bash "$CLONE_DIR/scripts/host/docker.sh"
 
-# ── Step 7: NVIDIA Drivers ────────────────────────────────────────────────────
-step "7 — NVIDIA Drivers"
+# ── Step 9: NVIDIA Drivers ────────────────────────────────────────────────────
+step "9 — NVIDIA Drivers"
 # nvidia.sh installs drivers and exits (exit 0) if a reboot is required.
 # CUDA toolkit + container toolkit run in install.sh AFTER the reboot via
 # scripts/host/nvidia.sh (idempotent — skips drivers, proceeds to CUDA+CTK).

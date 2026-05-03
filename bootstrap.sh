@@ -1,4 +1,24 @@
 #!/usr/bin/env bash
+# Early help – prints the usage header (comment block) and exits before any heavy work.
+if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    _line_no=0
+    while IFS= read -r _line; do
+        (( _line_no++ ))
+        # Skip shebang line and blank line at top
+        (( _line_no < 2 )) && continue
+        # Stop after the header comment (approx line 30)
+        (( _line_no > 30 )) && break
+        # Strip leading comment markers
+        if [[ "$_line" == "# "* ]]; then
+            printf '%s\n' "${_line#\# }"
+        elif [[ "$_line" == "#"* ]]; then
+            printf '%s\n' "${_line#\#}"
+        else
+            printf '%s\n' "$_line"
+        fi
+    done < "${BASH_SOURCE[0]}"
+    exit 0
+fi
 # bootstrap.sh — Fresh machine setup: auth, clone, PowerShell, Docker, NVIDIA
 #
 # Usage (fresh machine, before repo exists):
@@ -64,7 +84,7 @@ https://cli.github.com/packages stable main" | \
 fi
 
 sudo apt-get update -qq
-sudo apt-get install -y -qq curl gpg git chrony ca-certificates apt-transport-https skopeo jq
+sudo apt-get install -y -qq curl gpg git chrony ca-certificates apt-transport-https skopeo jq unzip
 
 # Brave browser (real .deb, not snap) — needed for gh auth --web inside xrdp
 # GNOME sessions where the Firefox snap fails on the snap cgroup confinement
@@ -381,10 +401,32 @@ step "9 — NVIDIA Drivers"
 # CUDA toolkit + container toolkit run in install.sh AFTER the reboot via
 # scripts/host/nvidia.sh (idempotent — skips drivers, proceeds to CUDA+CTK).
 
-DRIVERS_WERE_MISSING=false
-nvidia-smi &>/dev/null || DRIVERS_WERE_MISSING=true
+# Detect GPU vendor (NVIDIA vs AMD) before invoking NVIDIA setup.
+GPU_VENDOR="none"
+if command -v lspci &>/dev/null; then
+  if lspci -d 10de: &>/dev/null; then
+    GPU_VENDOR="nvidia"
+  elif lspci -d 1002: &>/dev/null; then
+    GPU_VENDOR="amd"
+  fi
+fi
 
-bash "$CLONE_DIR/scripts/host/nvidia.sh"
+if [[ "$GPU_VENDOR" == "nvidia" ]]; then
+  DRIVERS_WERE_MISSING=false
+  nvidia-smi &>/dev/null || DRIVERS_WERE_MISSING=true
+  bash "$CLONE_DIR/scripts/host/nvidia.sh"
+elif [[ "$GPU_VENDOR" == "amd" ]]; then
+  info "AMD GPU detected — handling AMD drivers."
+  bash "$CLONE_DIR/scripts/host/amd.sh"
+  if [ $? -eq 0 ]; then
+    DRIVERS_WERE_MISSING=false
+  else
+    DRIVERS_WERE_MISSING=true
+  fi
+else
+  info "No GPU detected — skipping NVIDIA driver installation."
+  DRIVERS_WERE_MISSING=false
+fi
 
 if $DRIVERS_WERE_MISSING; then
   echo ""

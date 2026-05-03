@@ -48,6 +48,27 @@
 #   Prerequisite: DHCP reservation set on router so machine keeps same IP
 #   (Synology NFS allowlist is IP-specific — different IP = access denied).
 
+# Early help – prints the usage header (comment block) and exits before any heavy imports.
+if [[ "$1" == "--help" || "$1" == "-h" ]]; then
+    _line_no=0
+    while IFS= read -r _line; do
+        (( _line_no++ ))
+        # Skip shebang and blank line at top
+        (( _line_no < 2 )) && continue
+        # Stop after the header comment (line ~30)
+        (( _line_no > 30 )) && break
+        # Strip leading comment markers
+        if [[ "$_line" == "# "* ]]; then
+            printf '%s\n' "${_line#\# }"
+        elif [[ "$_line" == "#"* ]]; then
+            printf '%s\n' "${_line#\#}"
+        else
+            printf '%s\n' "$_line"
+        fi
+    done < "${BASH_SOURCE[0]}"
+    exit 0
+fi
+
 set -euo pipefail
 
 if [[ "${EUID:-$(id -u)}" -eq 0 ]]; then
@@ -346,7 +367,8 @@ if "$FORCE_REBUILD"; then
     # (profile-agnostic). If the user passed --force-rebuild=svc1,svc2, filter
     # to just those — and fail loudly if any requested service is either
     # unknown or not locally-built, so typos don't silently no-op.
-    _ALL_BUILDABLE=$(python3 - "$REPO_DIR/docker-compose.yml" <<'PYEOF' 2>/dev/null || true
+    # NOTE: This block requires the Python 'yaml' module (PyYAML). Ensure it is installed (e.g., pip install pyyaml).
+_ALL_BUILDABLE=$(python3 - "$REPO_DIR/docker-compose.yml" <<'PYEOF' 2>/dev/null || true
 import sys, yaml
 with open(sys.argv[1]) as f:
     doc = yaml.safe_load(f) or {}

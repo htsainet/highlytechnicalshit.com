@@ -1,5 +1,7 @@
 # Ubuntu AI Stack
 
+<!-- Release process now auto-updates the website footer date via release-export.sh -->
+
 Self‑hosted AI workstation on Ubuntu 24.04 with GPU acceleration. It runs local LLM inference, image generation, voice synthesis, speech recognition, and a sandboxed agent runtime — all via Docker.
 
 ## Quick start (public)

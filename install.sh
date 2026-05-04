@@ -177,6 +177,20 @@ CONFIG_DIR="$REPO_DIR/config"
 BACKUP_BASE="$CONFIG_DIR/backups"
 STACK_JSON="$CONFIG_DIR/stack.json"
 ENV_FILE="$REPO_DIR/.env"
+# Ensure .env exists with required defaults (WEBUI_SECRET_KEY and OPENCLAW_TOKEN) for fresh installs
+GENERATED_ENV=false
+if [ ! -f "$ENV_FILE" ]; then
+  info "Generating minimal .env for fresh install"
+  mkdir -p "$(dirname "$ENV_FILE")"
+  printf "WEBUI_SECRET_KEY=$(openssl rand -hex 32)\nOPENCLAW_TOKEN=$(openssl rand -hex 32)\n" > "$ENV_FILE"
+  ok "Created $ENV_FILE with generated secrets"
+  GENERATED_ENV=true
+fi
+# If we just generated a fresh .env, launch the setup wizard automatically
+if $GENERATED_ENV; then
+  info "Auto‑setting RUN_MENU for fresh install"
+  RUN_MENU=true
+fi
 SETUP_MENU="$REPO_DIR/config/wizard/configure.py"
 SETUP_MENU_LEGACY="$REPO_DIR/config/wizard/ai_stack_setup.sh"
 APPLY_SCRIPT="$REPO_DIR/config/wizard/apply_config.sh"
@@ -262,11 +276,16 @@ if ! "$SKIP_CONFIG"; then
     RUN_MENU=true
   elif "$NUKE_AND_PAVE"; then
     info "Nuke & Pave — using existing config for reinstall"
-  else
-    warn "Existing config found: config/stack.json"
-    warn "  Last saved: $(python3 -c "import json; d=json.load(open('$STACK_JSON')); print(d.get('_meta',{}).get('saved_at','(default — never customised)'))" 2>/dev/null || echo '(unreadable)')"
-    echo ""
+else
+  warn "Existing config found: config/stack.json"
+  warn "  Last saved: $(python3 -c "import json; d=json.load(open('$STACK_JSON')); print(d.get('_meta',{}).get('saved_at','(default — never customised)'))" 2>/dev/null || echo '(unreadable)')"
+  echo ""
 
+  # If we just generated a fresh .env earlier, auto‑run the wizard and skip the menu
+  if $GENERATED_ENV; then
+    info "Auto‑running setup wizard for fresh install"
+    RUN_MENU=true
+  else
     _installer_menu_choice=""
     if command -v whiptail >/dev/null 2>&1; then
       _installer_menu_choice=$(whiptail --title "AI Stack — Existing Config Found" \
@@ -298,6 +317,7 @@ if ! "$SKIP_CONFIG"; then
       q) echo "Aborted."; exit 0 ;;
     esac
   fi
+fi
 
   if "$RUN_MENU"; then
     [ -f "$SETUP_MENU" ] || fail "Setup menu not found: $SETUP_MENU"
